@@ -19,6 +19,10 @@ export default defineConfig(({ mode }) => {
           target: apiBaseUrl,
           changeOrigin: true,
         },
+        "/resources": {
+          target: apiBaseUrl,
+          changeOrigin: true,
+        },
       },
     },
     test: {
