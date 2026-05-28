@@ -1,0 +1,86 @@
+name: gmdb-services
+
+services:
+  postgres:
+    image: ghcr.io/pmeyer/gmdb-postgres-jsonschema:${GMDB_POSTGRES_JSONSCHEMA_VERSION:-1.0.0}
+    container_name: gmdb-postgres-${GMDB_POSTGRES_JSONSCHEMA_VERSION:-1.0.0}
+    environment:
+      POSTGRES_DB: gmdb
+      POSTGRES_USER: ${POSTGRES_SA_USER:?Set POSTGRES_SA_USER in docker/gmdb-services/.env}
+      POSTGRES_PASSWORD: ${POSTGRES_SA_PASSWORD:?Set POSTGRES_SA_PASSWORD in docker/gmdb-services/.env}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - type: bind
+        source: ${GMDB_POSTGRES_DATA_DIR:?Set GMDB_POSTGRES_DATA_DIR in docker/gmdb-services/.env}
+        target: /var/lib/postgresql/data
+    networks:
+      - gmdb-private
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_SA_USER:?Set POSTGRES_SA_USER in docker/gmdb-services/.env} -d gmdb",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  liquibase-bootstrap:
+    image: ghcr.io/pmeyer/gmdb-liquibase:${GMDB_LIQUIBASE_VERSION:-1.3.0}
+    container_name: gmdb-liquibase-bootstrap-${GMDB_LIQUIBASE_VERSION:-1.3.0}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      GMDB_SUPERUSER: ${POSTGRES_SA_USER:?Set POSTGRES_SA_USER in docker/gmdb-services/.env}
+      GMDB_SUPERUSER_PASSWORD: ${POSTGRES_SA_PASSWORD:?Set POSTGRES_SA_PASSWORD in docker/gmdb-services/.env}
+      GMDB_ADMIN_PASSWORD: ${GMDB_ADMIN_PASSWORD:?Set GMDB_ADMIN_PASSWORD in docker/gmdb-services/.env}
+      GMDB_APP_PASSWORD: ${GMDB_APP_PASSWORD:?Set GMDB_APP_PASSWORD in docker/gmdb-services/.env}
+      PGSQL_HOST: postgres
+      PGSQL_PORT: 5432
+      SPRING_PROFILES_ACTIVE: bootstrap
+    networks:
+      - gmdb-private
+    restart: "no"
+
+  liquibase-migrate:
+    image: ghcr.io/pmeyer/gmdb-liquibase:${GMDB_LIQUIBASE_VERSION:-1.3.0}
+    container_name: gmdb-liquibase-migrate-${GMDB_LIQUIBASE_VERSION:-1.3.0}
+    depends_on:
+      liquibase-bootstrap:
+        condition: service_completed_successfully
+    environment:
+      GMDB_ADMIN_PASSWORD: ${GMDB_ADMIN_PASSWORD:?Set GMDB_ADMIN_PASSWORD in docker/gmdb-services/.env}
+      PGSQL_HOST: postgres
+      PGSQL_PORT: 5432
+      SPRING_PROFILES_ACTIVE: migrate
+    networks:
+      - gmdb-private
+    restart: "no"
+
+  api:
+    image: ghcr.io/pmeyer/gmdb-api:${GMDB_API_VERSION:-1.2.1}
+    container_name: gmdb-api-${GMDB_API_VERSION:-1.2.1}
+    depends_on:
+      liquibase-migrate:
+        condition: service_completed_successfully
+    environment:
+      FILE_SERVICE_ROOT: /var/lib/gmdb/file-repo
+      GMDB_APP_USER_PASSWORD: ${GMDB_APP_PASSWORD:?Set GMDB_APP_PASSWORD in docker/gmdb-services/.env}
+      GMDB_URL: r2dbc:postgresql://postgres:5432/gmdb
+      SERVER_PORT: 8080
+    ports:
+      - "8080:8080"
+    volumes:
+      - type: bind
+        source: ${GMDB_FILE_REPO_DIR:?Set GMDB_FILE_REPO_DIR in docker/gmdb-services/.env}
+        target: /var/lib/gmdb/file-repo
+    networks:
+      - gmdb-private
+
+networks:
+  gmdb-private:
+    driver: bridge
+    internal: false
