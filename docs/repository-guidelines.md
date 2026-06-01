@@ -4,6 +4,7 @@
 - Use [convention commits](https://www.conventionalcommits.org/en/v1.0.0/#:~:text=The%20Conventional%20Commits%20specification%20is,automated%20tools%20on%20top%20of). 
 - Group related edits together instead of squashing unrelated fixes.
 - PRs should describe context, list notable changes, and call out schema updates or required migrations. Link Jira/GitHub issues when available.
+- Always create a new branch for deliverable piece of work.
 
 ## Coding Guidelines
 - TypeScript to be used
