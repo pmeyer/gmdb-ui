@@ -118,3 +118,13 @@ A song transcription must be added to a publication.  As such, specifying a publ
 
 ### Editing a Song Transcription
 A user should be able to change all elements of song transcription.
+
+## Artist Specification
+The following requirements describe the song-artist role-centric required behavior around the display and entry of artists and their role(s) with respect to a song.
+
+- Artists/Roles for a song should be displayed for songs, aggregated by their roles, for example: 
+  - Words By: artist a, artist b
+  - Music By: artist b, artist c, artist d
+  - Performed By: artist z
+
+- Input of artists for a song should be role oriented.  In other words, one ore more artists should be able to be specified for each of the available roles on a song (WORDS_BY, MUSIC_BY, PERFORMED_BY)

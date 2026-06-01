@@ -19,7 +19,7 @@ See [build and operational details](docs/build-ops-details.md) in the docs folde
 User functional requirements detailing required behavior of the application can be found [here](docs/functional-requirements.md).
 
 ## Non-Functional Requirements
-The UI will leverage the [GraphQL API](https://github.com/pmeyer/gmdb-api/blob/main/GRAPHQL_API.md) to access and manage the Guitar Music catalog.
+Non-functional requires detailing non-user requirements are documented [here](docs/non-functional-requirements.md).
 
 ## Design
 
