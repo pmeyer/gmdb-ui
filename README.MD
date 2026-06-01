@@ -5,7 +5,7 @@ guitar magazines and song books containing guitar tablature song transcriptions.
 - allow users to upload files to the system and associate them with songs and publications
 - allow users to browse and search the catalog and view song transcriptions
 
-# Development Guidelines
+# Development Information
 
 ## Repository Guidelines
 Shared repository guidelines and coding standards are maintained in [Repository Guidelines](docs/repository-guidelines.md).
@@ -15,18 +15,13 @@ See [build and operational details](docs/build-ops-details.md) in the docs folde
 
 # Specification
 
-## UI
-The UI will leverage the GraphQL API to access and manage the Guitar Music catalog.
+## Functional Requirements
+User functional requirements detailing required behavior of the application can be found [here](docs/functional-requirements.md).
 
-## User Journeys
-### 1. Publication Oriented
-A user should be able to display, filter, sort all cataloged publications and browse through them (vertical scroll).
+## Non-Functional Requirements
+Non-functional requires detailing non-user requirements are documented [here](docs/non-functional-requirements.md).
 
-Filtering criteria is currently undefined but will be initially limited by available options in the current version of the API.
-
-Ideally, multiple publications should be displayed horizontally per in rows, but the design in general should be responsive.
-
-A user should be able to initiate adding a new publication, edit an existing publication and access detailed publication information 
+## Design
 
 #### Publication Display
 * Displayed as a scrolling list where individual publications prominently feature the image of their cover (whether a book or magazine) alongside a list of the transcribed songs in the publication.  
