@@ -1,3 +1,5 @@
 # Application Design
 
-Application design notes to be added here.
+Slice-specific design notes:
+
+- [Catalog Application Shell](design/catalog-application-shell.md)
