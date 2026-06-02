@@ -1,6 +1,18 @@
 # Non-Functional Requirements
 
+## GraphQL 
+
 The UI will leverage the [GraphQL API](https://github.com/pmeyer/gmdb-api/blob/main/GRAPHQL_API.md) to access and manage the Guitar Music catalog.
+
+GraphQL code generation is configured in `codegen.ts` and follows the Apollo Client recommendation for colocated operation output:
+- Shared schema/common types needed by operations are generated to `src/graphql/generated/graphql.ts`.
+- Application operations should be authored as `.graphql` files near the component or module that uses them.
+- Operation-specific generated files are emitted next to the source `.graphql` file via the `near-operation-file` preset.
+- Operation output includes `typescript-operations` types and `typed-document-node` precompiled documents, so application code should import the generated document instead of defining runtime `gql` template literals in TypeScript or TSX files.
+- `npm run codegen` regenerates both shared schema types and operation-local generated files. The schema endpoint defaults to `http://localhost:8080/graphql` and can be overridden with `GRAPHQL_SCHEMA`.
+- Generated files should be committed with the source operation changes so type safety is stable in CI and for developers without a running API.
+
+## MUI Framework
 
 MUI will be used as the UI framework for primary UI components. As such:
 - MUI Autocomplete will be used in many places where selection of an existing element, or specification of a new element is required, for example:
