@@ -1,18 +1,26 @@
-import type { ReactNode } from "react";
+import type { ChangeEvent, ReactNode, SyntheticEvent } from "react";
 import { useCallback, useMemo, useState } from "react";
 import { useQuery } from "@apollo/client/react";
 import {
   Alert,
   Box,
   Button,
+  Chip,
+  FormControl,
+  InputLabel,
+  MenuItem,
   Paper,
+  Select,
+  type SelectChangeEvent,
   Skeleton,
   Snackbar,
   Stack,
+  TextField,
   Typography,
 } from "@mui/material";
 
 import { PublicationCard } from "../../components/catalog";
+import type { PubSearchCriteria, PubType } from "../../graphql/generated/graphql";
 import { PublicationCatalogDocument } from "./PublicationCatalogView.generated";
 import { mapPublicationToCardProps } from "./publicationSummary";
 
@@ -25,7 +33,46 @@ interface PublicationCatalogStateProps {
   message: string;
 }
 
-const defaultPublicationCriteria = {};
+interface PublicationsToolbarProps {
+  activeFilterLabels: string[];
+  canReset: boolean;
+  searchDraft: string;
+  typeFilter: PublicationTypeFilter;
+  onClear: () => void;
+  onSearchDraftChange: (value: string) => void;
+  onSearchSubmit: () => void;
+  onTypeFilterChange: (value: PublicationTypeFilter) => void;
+}
+
+type PublicationTypeFilter = "ALL" | PubType;
+
+const defaultTypeFilter: PublicationTypeFilter = "ALL";
+
+function isNonBlank(value: string) {
+  return value.trim().length > 0;
+}
+
+function publicationTypeLabel(type: PubType) {
+  return type === "MAG" ? "Magazines" : "Books";
+}
+
+function buildPublicationCriteria(
+  searchName: string,
+  typeFilter: PublicationTypeFilter,
+): PubSearchCriteria {
+  const criteria: PubSearchCriteria = {};
+  const trimmedSearchName = searchName.trim();
+
+  if (isNonBlank(trimmedSearchName)) {
+    criteria.searchName = trimmedSearchName;
+  }
+
+  if (typeFilter !== "ALL") {
+    criteria.type = typeFilter;
+  }
+
+  return criteria;
+}
 
 function PublicationGrid({ children }: PublicationGridProps) {
   return (
@@ -78,6 +125,119 @@ function PublicationCatalogState({ title, message }: PublicationCatalogStateProp
   );
 }
 
+function PublicationsToolbar({
+  activeFilterLabels,
+  canReset,
+  searchDraft,
+  typeFilter,
+  onClear,
+  onSearchDraftChange,
+  onSearchSubmit,
+  onTypeFilterChange,
+}: PublicationsToolbarProps) {
+  const handleSearchDraftChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      onSearchDraftChange(event.target.value);
+    },
+    [onSearchDraftChange],
+  );
+
+  const handleSearchSubmit = useCallback(
+    (event: SyntheticEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      onSearchSubmit();
+    },
+    [onSearchSubmit],
+  );
+
+  const handleTypeFilterChange = useCallback(
+    (event: SelectChangeEvent<PublicationTypeFilter>) => {
+      onTypeFilterChange(event.target.value);
+    },
+    [onTypeFilterChange],
+  );
+
+  return (
+    <Paper
+      component="form"
+      noValidate
+      onSubmit={handleSearchSubmit}
+      variant="outlined"
+      sx={{
+        bgcolor: "background.paper",
+        borderRadius: 2,
+        p: { xs: 2, sm: 2.5 },
+      }}
+    >
+      <Stack spacing={2}>
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          spacing={2}
+          sx={{ alignItems: { xs: "stretch", md: "flex-start" } }}
+        >
+          <TextField
+            fullWidth
+            label="Search publications"
+            name="publication-search"
+            onChange={handleSearchDraftChange}
+            size="small"
+            value={searchDraft}
+          />
+
+          <FormControl size="small" sx={{ minWidth: { md: 170 } }}>
+            <InputLabel id="publication-type-filter-label">Type</InputLabel>
+            <Select
+              label="Type"
+              labelId="publication-type-filter-label"
+              onChange={handleTypeFilterChange}
+              value={typeFilter}
+            >
+              <MenuItem value="ALL">All types</MenuItem>
+              <MenuItem value="MAG">Magazines</MenuItem>
+              <MenuItem value="BOOK">Books</MenuItem>
+            </Select>
+          </FormControl>
+
+          <Stack
+            direction={{ xs: "column", sm: "row", md: "column" }}
+            spacing={1}
+            sx={{
+              alignItems: "stretch",
+              minWidth: { md: 120 },
+            }}
+          >
+            <Button type="submit" variant="contained">
+              Search
+            </Button>
+            <Button disabled={!canReset} onClick={onClear} type="button" variant="text">
+              Reset
+            </Button>
+          </Stack>
+        </Stack>
+
+        {activeFilterLabels.length > 0 && (
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 1,
+            }}
+          >
+            <Typography component="p" variant="body2" sx={{ color: "text.secondary" }}>
+              Active filters
+            </Typography>
+            {activeFilterLabels.map((label) => (
+              <Chip key={label} label={label} size="small" />
+            ))}
+          </Stack>
+        )}
+      </Stack>
+    </Paper>
+  );
+}
+
 function PublicationLoadingGrid() {
   return (
     <PublicationGrid>
@@ -98,12 +258,43 @@ function PublicationLoadingGrid() {
 }
 
 export function PublicationCatalogView() {
+  const [appliedSearchName, setAppliedSearchName] = useState("");
   const [isAddPublicationNoticeOpen, setIsAddPublicationNoticeOpen] =
     useState(false);
+  const [searchDraft, setSearchDraft] = useState("");
+  const [typeFilter, setTypeFilter] =
+    useState<PublicationTypeFilter>(defaultTypeFilter);
+
+  const criteria = useMemo(
+    () => buildPublicationCriteria(appliedSearchName, typeFilter),
+    [appliedSearchName, typeFilter],
+  );
+
+  const hasActiveFilters = useMemo(
+    () => isNonBlank(appliedSearchName) || typeFilter !== "ALL",
+    [appliedSearchName, typeFilter],
+  );
+
+  const activeFilterLabels = useMemo(() => {
+    const labels: string[] = [];
+
+    if (isNonBlank(appliedSearchName)) {
+      labels.push(`Search: ${appliedSearchName.trim()}`);
+    }
+
+    if (typeFilter !== "ALL") {
+      labels.push(`Type: ${publicationTypeLabel(typeFilter)}`);
+    }
+
+    return labels;
+  }, [appliedSearchName, typeFilter]);
+
+  const canReset =
+    hasActiveFilters || isNonBlank(searchDraft);
 
   const { data, error, loading } = useQuery(PublicationCatalogDocument, {
     variables: {
-      criteria: defaultPublicationCriteria,
+      criteria,
     },
   });
 
@@ -122,6 +313,16 @@ export function PublicationCatalogView() {
 
   const handleCloseAddPublicationNotice = useCallback(() => {
     setIsAddPublicationNoticeOpen(false);
+  }, []);
+
+  const handleSearchSubmit = useCallback(() => {
+    setAppliedSearchName(searchDraft.trim());
+  }, [searchDraft]);
+
+  const handleClear = useCallback(() => {
+    setAppliedSearchName("");
+    setSearchDraft("");
+    setTypeFilter(defaultTypeFilter);
   }, []);
 
   return (
@@ -170,6 +371,17 @@ export function PublicationCatalogView() {
         </Button>
       </Stack>
 
+      <PublicationsToolbar
+        activeFilterLabels={activeFilterLabels}
+        canReset={canReset}
+        searchDraft={searchDraft}
+        typeFilter={typeFilter}
+        onClear={handleClear}
+        onSearchDraftChange={setSearchDraft}
+        onSearchSubmit={handleSearchSubmit}
+        onTypeFilterChange={setTypeFilter}
+      />
+
       {loading && <PublicationLoadingGrid />}
 
       {!loading && error !== undefined && (
@@ -179,10 +391,17 @@ export function PublicationCatalogView() {
         </Alert>
       )}
 
-      {!loading && error === undefined && publications.length === 0 && (
+      {!loading && error === undefined && publications.length === 0 && !hasActiveFilters && (
         <PublicationCatalogState
           title="No publications found"
           message="Cataloged magazines and books will appear here once they are added."
+        />
+      )}
+
+      {!loading && error === undefined && publications.length === 0 && hasActiveFilters && (
+        <PublicationCatalogState
+          title="No publications match these filters"
+          message="Adjust the search or publication type filter to broaden the results."
         />
       )}
 
