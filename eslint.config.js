@@ -11,6 +11,7 @@ export default tseslint.config(
       "node_modules",
       "eslint.config.js",
       "src/graphql/generated/**",
+      "src/**/*.generated.ts",
     ],
   },
   js.configs.recommended,

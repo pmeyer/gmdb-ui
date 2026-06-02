@@ -1,0 +1,162 @@
+import { graphql, HttpResponse, delay } from "msw";
+import { describe, expect, it } from "vitest";
+import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+
+import { server } from "../../test/server";
+import { renderWithProviders } from "../../test/renderWithProviders";
+import { PublicationCatalogView } from "./PublicationCatalogView";
+
+function publicationCatalogHandler(pubSearch: unknown[]) {
+  return graphql.query("PublicationCatalog", () =>
+    HttpResponse.json({
+      data: {
+        pubSearch,
+      },
+    }),
+  );
+}
+
+const publicationCatalogResults = [
+  {
+    __typename: "PubSearchResult",
+    id: "1",
+    name: "Guitar World",
+    type: "MAG",
+    pubDate: "1992-06-01",
+    serialNumber: "ISSN 1045-6295",
+    pubIndexId: "11",
+    details: {
+      __typename: "MagDetails",
+      cover: "/resources/publications/1/cover",
+      volume: "12",
+      issue: "4",
+      issueName: "Summer Songs",
+    },
+    transcriptions: [
+      {
+        __typename: "PubTranscription",
+        id: "101",
+        song: {
+          __typename: "Song",
+          id: "201",
+          title: "Little Wing",
+        },
+      },
+      {
+        __typename: "PubTranscription",
+        id: "102",
+        song: {
+          __typename: "Song",
+          id: "202",
+          title: "Barracuda",
+        },
+      },
+    ],
+  },
+  {
+    __typename: "PubSearchResult",
+    id: "2",
+    name: "Collected Rock Tabs",
+    type: "BOOK",
+    pubDate: "1989-01-15",
+    serialNumber: "ISBN 978-1-2345-6789-0",
+    pubIndexId: "12",
+    details: {
+      __typename: "BookDetails",
+      cover: null,
+      edition: "First edition",
+    },
+    transcriptions: [],
+  },
+];
+
+describe("PublicationCatalogView", () => {
+  it("shows loading placeholders while publications are loading", () => {
+    server.use(
+      graphql.query("PublicationCatalog", async () => {
+        await delay(100);
+
+        return HttpResponse.json({
+          data: {
+            pubSearch: [],
+          },
+        });
+      }),
+    );
+
+    renderWithProviders(<PublicationCatalogView />);
+
+    expect(screen.getAllByLabelText("Loading publication")).toHaveLength(8);
+  });
+
+  it("renders publication cards from GraphQL search results", async () => {
+    server.use(publicationCatalogHandler(publicationCatalogResults));
+
+    renderWithProviders(<PublicationCatalogView />);
+
+    expect(
+      await screen.findByRole("heading", { name: "Guitar World" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Collected Rock Tabs" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Magazine issue")).toBeInTheDocument();
+    expect(screen.getByText("Book edition")).toBeInTheDocument();
+    expect(
+      screen.getByText("Vol. 12 · Issue 4 · Summer Songs · June 1, 1992"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Edition First edition · January 15, 1989"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Includes Little Wing, Barracuda")).toBeInTheDocument();
+    expect(screen.getByText("0 transcriptions")).toBeInTheDocument();
+  });
+
+  it("shows an empty state when no publications match", async () => {
+    server.use(publicationCatalogHandler([]));
+
+    renderWithProviders(<PublicationCatalogView />);
+
+    expect(
+      await screen.findByRole("heading", { name: "No publications found" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Cataloged magazines and books will appear here once they are added."),
+    ).toBeInTheDocument();
+  });
+
+  it("shows an error state when the GraphQL query fails", async () => {
+    server.use(
+      graphql.query("PublicationCatalog", () =>
+        HttpResponse.json(
+          {
+            errors: [{ message: "Catalog API unavailable" }],
+          },
+          { status: 500 },
+        ),
+      ),
+    );
+
+    renderWithProviders(<PublicationCatalogView />);
+
+    expect(
+      await screen.findByText(
+        "Publications could not be loaded. Try again after the catalog API is available.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps the add publication action visible as a deferred workflow", async () => {
+    const user = userEvent.setup();
+    server.use(publicationCatalogHandler([]));
+
+    renderWithProviders(<PublicationCatalogView />);
+
+    await user.click(screen.getByRole("button", { name: "Add publication" }));
+
+    expect(
+      await screen.findByText("Add publication is not available yet."),
+    ).toBeInTheDocument();
+  });
+});
