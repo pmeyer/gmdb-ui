@@ -42,6 +42,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@graphql-codegen/cli": "^7.0.1",
+    "@graphql-codegen/near-operation-file-preset": "^5.2.1",
     "@graphql-codegen/typed-document-node": "^7.0.2",
     "@graphql-codegen/typescript": "^6.0.2",
     "@graphql-codegen/typescript-operations": "^6.0.3",
