@@ -1,5 +1,5 @@
 import type { MouseEvent } from "react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   Box,
   Chip,
@@ -13,6 +13,8 @@ import {
   Typography,
 } from "@mui/material";
 
+import { PublicationCatalogView } from "./features/publications/PublicationCatalogView";
+
 type CatalogView = "publications" | "songs";
 
 interface CatalogViewSwitcherProps {
@@ -20,7 +22,7 @@ interface CatalogViewSwitcherProps {
   onViewChange: (view: CatalogView) => void;
 }
 
-interface CatalogModeContent {
+interface DeferredCatalogContent {
   eyebrow: string;
   title: string;
   description: string;
@@ -30,28 +32,17 @@ interface CatalogModeContent {
 }
 
 interface EmptyCatalogPanelProps {
-  content: CatalogModeContent;
+  content: DeferredCatalogContent;
 }
 
-const catalogContent: Record<CatalogView, CatalogModeContent> = {
-  publications: {
-    eyebrow: "Publication Library",
-    title: "Browse guitar magazines and song books",
-    description:
-      "Publication cards will collect issue details, cover art, and the transcriptions scanned from each source.",
-    primaryLabel: "Magazine issues",
-    secondaryLabel: "Song books",
-    tertiaryLabel: "Cover art",
-  },
-  songs: {
-    eyebrow: "Song Index",
-    title: "Find songs and their available transcriptions",
-    description:
-      "Song rows will surface album context, artist roles, transcribers, and the publication where each transcription appears.",
-    primaryLabel: "Album context",
-    secondaryLabel: "Artist roles",
-    tertiaryLabel: "Transcribers",
-  },
+const songCatalogContent: DeferredCatalogContent = {
+  eyebrow: "Song Index",
+  title: "Find songs and their available transcriptions",
+  description:
+    "Song rows will surface album context, artist roles, transcribers, and the publication where each transcription appears.",
+  primaryLabel: "Album context",
+  secondaryLabel: "Artist roles",
+  tertiaryLabel: "Transcribers",
 };
 
 function CatalogViewSwitcher({
@@ -161,11 +152,6 @@ function EmptyCatalogPanel({ content }: EmptyCatalogPanelProps) {
 function App() {
   const [selectedView, setSelectedView] = useState<CatalogView>("publications");
 
-  const selectedContent = useMemo(
-    () => catalogContent[selectedView],
-    [selectedView],
-  );
-
   const handleViewChange = useCallback((nextView: CatalogView) => {
     setSelectedView(nextView);
   }, []);
@@ -237,7 +223,11 @@ function App() {
               py: { xs: 3, sm: 5 },
             }}
           >
-            <EmptyCatalogPanel content={selectedContent} />
+            {selectedView === "publications" ? (
+              <PublicationCatalogView />
+            ) : (
+              <EmptyCatalogPanel content={songCatalogContent} />
+            )}
           </Container>
         </Box>
       </Box>
