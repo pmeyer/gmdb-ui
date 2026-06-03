@@ -1,0 +1,68 @@
+query AddPublicationIndexLookup($criteria: PubIndexCriteria! = {}) {
+  getPubIndices(criteria: $criteria) {
+    id
+    name
+    type
+    serialNumber
+  }
+}
+
+mutation AddMagazineIssue($magInput: MagazineInput!) {
+  addMagazineIssue(magInput: $magInput) {
+    id
+    name
+    type
+    pubDate
+    serialNumber
+    pubIndexId
+    details {
+      __typename
+      cover
+      ... on MagDetails {
+        volume
+        issue
+        issueName
+      }
+      ... on BookDetails {
+        edition
+      }
+    }
+    transcriptions {
+      id
+      song {
+        id
+        title
+      }
+    }
+  }
+}
+
+mutation AddBookEdition($bookInput: BookInput!) {
+  addBookEdition(bookInput: $bookInput) {
+    id
+    name
+    type
+    pubDate
+    serialNumber
+    pubIndexId
+    details {
+      __typename
+      cover
+      ... on MagDetails {
+        volume
+        issue
+        issueName
+      }
+      ... on BookDetails {
+        edition
+      }
+    }
+    transcriptions {
+      id
+      song {
+        id
+        title
+      }
+    }
+  }
+}

@@ -13,11 +13,11 @@ The publication grid is the default homepage catalog view. It lets users browse 
 
 ## Routing and Navigation
 
-No route changes are introduced. `App` still uses local state for the Publications/Songs switcher, and Publications remains the default homepage view. The Add publication button is present but currently opens a deferred-workflow notice because the add form is outside this slice.
+`App` uses local state for the Publications/Songs switcher, and Publications remains the default homepage view. The Add publication button delegates to the app shell and opens `/publications/add`, which hosts the guided Add Publication flow.
 
 ## State Management
 
-Publication data loading is handled by Apollo `useQuery` inside `PublicationCatalogView`. Filter state is local to this view because no cross-route or shareable search requirement exists yet. Search text is kept as draft state until the form is submitted, while publication type updates the applied criteria immediately. The Add publication notice uses local component state. No global state or URL state is added.
+Publication data loading is handled by Apollo `useQuery` inside `PublicationCatalogView`. Filter state is local to this view because no cross-route or shareable search requirement exists yet. Search text is kept as draft state until the form is submitted, while publication type updates the applied criteria immediately. No global state or URL state is added for publication-grid filters.
 
 ## GraphQL/API Integration
 
@@ -30,7 +30,7 @@ Sorting controls are not implemented in this slice because the current criteria 
 
 ## Material UI Patterns
 
-The view uses MUI `Stack`, `Box`, `Typography`, `Button`, `TextField`, `Select`, `MenuItem`, `Chip`, `Skeleton`, `Alert`, `Paper`, and `Snackbar`. The toolbar is a compact form surface with MUI form controls and chips for applied filters. The card layout uses CSS grid through MUI `Box` with responsive columns: one column on phones, two on tablets, three on medium screens, and four on large desktop.
+The view uses MUI `Stack`, `Box`, `Typography`, `Button`, `TextField`, `Select`, `MenuItem`, `Chip`, `Skeleton`, `Alert`, and `Paper`. The toolbar is a compact form surface with MUI form controls and chips for applied filters. The card layout uses CSS grid through MUI `Box` with responsive columns: one column on phones, two on tablets, three on medium screens, and four on large desktop.
 
 ## Accessibility and Responsive Design
 
@@ -38,6 +38,6 @@ The view uses a semantic section, a stable `h2` page heading, labeled text and s
 
 ## Known Limitations
 
-- Add publication, edit publication, detail pages, sorting, and destructive actions are deferred.
+- Edit publication, sorting, and destructive actions are deferred.
 - Sorting is specifically deferred until the GraphQL API exposes a supported sort contract.
 - Transcription previews are limited to the lightweight song titles returned by `pubSearch`.

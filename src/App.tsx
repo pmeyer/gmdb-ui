@@ -10,6 +10,7 @@ import {
   Typography,
 } from "@mui/material";
 
+import { AddPublicationView } from "./features/publications/AddPublicationView";
 import { PublicationCatalogView } from "./features/publications/PublicationCatalogView";
 import { PublicationDetailView } from "./features/publications/PublicationDetailView";
 import { SongCatalogView } from "./features/songs/SongCatalogView";
@@ -20,6 +21,9 @@ type TranscriptionBackContext = "publication" | "songs";
 type AppRoute =
   | {
       name: "catalog";
+    }
+  | {
+      name: "addPublication";
     }
   | {
       name: "publicationDetail";
@@ -38,6 +42,12 @@ interface CatalogViewSwitcherProps {
 }
 
 function readCurrentRoute(): AppRoute {
+  if (/^\/publications\/add\/?$/.test(window.location.pathname)) {
+    return {
+      name: "addPublication",
+    };
+  }
+
   const transcriptionDetailMatch =
     /^\/publications\/([^/]+)\/transcriptions\/([^/]+)\/?$/.exec(
       window.location.pathname,
@@ -169,6 +179,14 @@ function App() {
     });
   }, []);
 
+  const handleAddPublication = useCallback(() => {
+    setSelectedView("publications");
+    pushRoute("/publications/add");
+    setRoute({
+      name: "addPublication",
+    });
+  }, []);
+
   const handleTranscriptionSelected = useCallback(
     (
       publicationId: string,
@@ -273,7 +291,14 @@ function App() {
               py: { xs: 3, sm: 5 },
             }}
           >
-            {route.name === "transcriptionDetail" ? (
+            {route.name === "addPublication" ? (
+              <AddPublicationView
+                onCancel={() => {
+                  navigateToCatalog("publications");
+                }}
+                onSaved={handlePublicationSelected}
+              />
+            ) : route.name === "transcriptionDetail" ? (
               <TranscriptionDetailView
                 publicationId={route.publicationId}
                 transcriptionId={route.transcriptionId}
@@ -298,6 +323,7 @@ function App() {
               />
             ) : selectedView === "publications" ? (
               <PublicationCatalogView
+                onAddPublication={handleAddPublication}
                 onPublicationSelected={handlePublicationSelected}
               />
             ) : (
