@@ -13,7 +13,6 @@ import {
   Select,
   type SelectChangeEvent,
   Skeleton,
-  Snackbar,
   Stack,
   TextField,
   Typography,
@@ -34,6 +33,7 @@ interface PublicationCatalogStateProps {
 }
 
 interface PublicationCatalogViewProps {
+  onAddPublication?: () => void;
   onPublicationSelected?: (publicationId: string) => void;
 }
 
@@ -262,11 +262,10 @@ function PublicationLoadingGrid() {
 }
 
 export function PublicationCatalogView({
+  onAddPublication,
   onPublicationSelected,
 }: PublicationCatalogViewProps) {
   const [appliedSearchName, setAppliedSearchName] = useState("");
-  const [isAddPublicationNoticeOpen, setIsAddPublicationNoticeOpen] =
-    useState(false);
   const [searchDraft, setSearchDraft] = useState("");
   const [typeFilter, setTypeFilter] =
     useState<PublicationTypeFilter>(defaultTypeFilter);
@@ -314,12 +313,8 @@ export function PublicationCatalogView({
   );
 
   const handleAddPublication = useCallback(() => {
-    setIsAddPublicationNoticeOpen(true);
-  }, []);
-
-  const handleCloseAddPublicationNotice = useCallback(() => {
-    setIsAddPublicationNoticeOpen(false);
-  }, []);
+    onAddPublication?.();
+  }, [onAddPublication]);
 
   const handleSearchSubmit = useCallback(() => {
     setAppliedSearchName(searchDraft.trim());
@@ -436,13 +431,6 @@ export function PublicationCatalogView({
           ))}
         </PublicationGrid>
       )}
-
-      <Snackbar
-        autoHideDuration={4000}
-        message="Add publication is not available yet."
-        onClose={handleCloseAddPublicationNotice}
-        open={isAddPublicationNoticeOpen}
-      />
     </Stack>
   );
 }

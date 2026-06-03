@@ -1,5 +1,5 @@
 import { graphql, HttpResponse, delay } from "msw";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -313,16 +313,15 @@ describe("PublicationCatalogView", () => {
     ).toBeInTheDocument();
   });
 
-  it("keeps the add publication action visible as a deferred workflow", async () => {
+  it("uses the add publication action callback when provided", async () => {
     const user = userEvent.setup();
+    const onAddPublication = vi.fn();
     server.use(publicationCatalogHandler([]));
 
-    renderWithProviders(<PublicationCatalogView />);
+    renderWithProviders(<PublicationCatalogView onAddPublication={onAddPublication} />);
 
     await user.click(screen.getByRole("button", { name: "Add publication" }));
 
-    expect(
-      await screen.findByText("Add publication is not available yet."),
-    ).toBeInTheDocument();
+    expect(onAddPublication).toHaveBeenCalledOnce();
   });
 });

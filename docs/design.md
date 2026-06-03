@@ -2,6 +2,7 @@
 
 Slice-specific design notes:
 
+- [Add Publication Flow](design/add-publication-flow.md)
 - [Catalog Application Shell](design/catalog-application-shell.md)
 - [Catalog Item Cards](design/catalog-item-cards.md)
 - [Publication Detail View](design/publication-detail-view.md)

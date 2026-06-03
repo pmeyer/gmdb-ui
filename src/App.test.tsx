@@ -27,6 +27,24 @@ function publicationCatalogHandler() {
   );
 }
 
+function publicationIndexLookupHandler() {
+  return graphql.query("AddPublicationIndexLookup", () =>
+    HttpResponse.json({
+      data: {
+        getPubIndices: [
+          {
+            __typename: "PubIndexResult",
+            id: "11",
+            name: "Guitar World",
+            type: "MAG",
+            serialNumber: "10456295",
+          },
+        ],
+      },
+    }),
+  );
+}
+
 function publicationDetailHandler() {
   return graphql.query("PublicationDetailCatalog", () =>
     HttpResponse.json({
@@ -202,6 +220,25 @@ describe("App", () => {
     expect(
       screen.getByRole("button", { name: "Publications" }),
     ).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("opens the add publication flow from the publication catalog", async () => {
+    const user = userEvent.setup();
+    server.use(emptyPublicationCatalogHandler(), publicationIndexLookupHandler());
+
+    renderWithProviders(<App />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Add publication" }),
+    );
+
+    expect(window.location.pathname).toBe("/publications/add");
+    expect(
+      screen.getByRole("heading", { name: "Add publication" }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole("combobox", { name: "Existing magazine" }),
+    ).toBeInTheDocument();
   });
 
   it("switches to the song-centric catalog view", async () => {
