@@ -37,6 +37,16 @@ function publicationDetailHandler() {
   );
 }
 
+function songCatalogHandler() {
+  return graphql.query("SongCatalog", () =>
+    HttpResponse.json({
+      data: {
+        songSearch: songResults,
+      },
+    }),
+  );
+}
+
 const publicationResults = [
   {
     __typename: "PubSearchResult",
@@ -67,6 +77,68 @@ const publicationResults = [
   },
 ];
 
+const songResults = [
+  {
+    __typename: "SongSearchResult",
+    id: "201",
+    title: "Little Wing",
+    album: {
+      __typename: "SongAlbum",
+      id: "301",
+      title: "Axis: Bold as Love",
+      trackNumber: 6,
+      releaseDate: "1967-12-01",
+      albumArtUrl: "/resources/albums/301/cover",
+      artist: {
+        __typename: "Artist",
+        id: "401",
+        name: "The Jimi Hendrix Experience",
+        type: "BAND",
+      },
+    },
+    artists: [
+      {
+        __typename: "SongArtist",
+        id: "402",
+        name: "Jimi Hendrix",
+        type: "PERSON",
+        roles: ["PERFORMED_BY"],
+      },
+    ],
+    transcriptions: [
+      {
+        __typename: "Transcription",
+        id: "101",
+        url: "/resources/transcriptions/101/file",
+        pageNumber: 48,
+        pub: {
+          __typename: "TranscriptionPub",
+          id: "1",
+          name: "Guitar World",
+          type: "MAG",
+          pubDate: "1992-06-01",
+          serialNumber: "ISSN 1045-6295",
+          pubIndexId: "11",
+          details: {
+            __typename: "MagDetails",
+            cover: null,
+            volume: "12",
+            issue: "4",
+            issueName: "Summer Songs",
+          },
+        },
+        transcribers: [
+          {
+            __typename: "Transcriber",
+            id: "501",
+            name: "Jane Smith",
+          },
+        ],
+      },
+    ],
+  },
+];
+
 describe("App", () => {
   beforeEach(() => {
     window.history.replaceState(null, "", "/");
@@ -92,7 +164,7 @@ describe("App", () => {
 
   it("switches to the song-centric catalog view", async () => {
     const user = userEvent.setup();
-    server.use(emptyPublicationCatalogHandler());
+    server.use(emptyPublicationCatalogHandler(), songCatalogHandler());
 
     renderWithProviders(<App />);
 
@@ -100,8 +172,14 @@ describe("App", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "Find songs and their available transcriptions",
+        name: "Browse song transcriptions",
       }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Little Wing" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Add song transcription" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Songs" })).toHaveAttribute(
       "aria-pressed",

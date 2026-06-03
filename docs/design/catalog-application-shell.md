@@ -8,19 +8,19 @@ The catalog shell establishes GMDB as a personal guitar transcription reference 
 
 - `App` owns the top-level page structure and current browsing mode.
 - `CatalogViewSwitcher` uses a Material UI `ToggleButtonGroup` for the Publications/Songs mode switch.
-- `EmptyCatalogPanel` provides mode-specific placeholder content until real catalog data is wired.
+- `SongCatalogView` provides the API-backed Songs browsing mode.
 
 ## Routing and Navigation
 
-No routing is introduced in this slice. The homepage renders the publication-centric view by default, and switching to Songs is local in-page navigation.
+No route changes are introduced for the Songs mode. The homepage renders the publication-centric view by default, and switching to Songs is local in-page navigation.
 
 ## State Management
 
-The selected catalog mode is local React state in `App`. This keeps the shell simple while the app has no route, persistence, or API-backed view data.
+The selected catalog mode is local React state in `App`. Publication detail routes remain synchronized with browser history, while root catalog view selection stays in page state.
 
 ## GraphQL/API Integration
 
-No GraphQL operations are introduced. The shell avoids inventing API behavior and leaves publication and song data loading for later slices.
+The shell delegates API loading to feature views. `PublicationCatalogView`, `PublicationDetailView`, and `SongCatalogView` each own their colocated GraphQL operations and generated typed documents.
 
 ## Material UI Patterns
 
@@ -32,6 +32,5 @@ The header uses semantic `header` and `main` regions, with real `h1` and `h2` he
 
 ## Known Limitations
 
-- Publication and song cards are placeholders only.
-- No filters, sorting, create/edit actions, routing, or transcription viewing are implemented yet.
+- Create/edit actions and transcription viewing are deferred workflows.
 - View selection is not encoded in the URL or persisted across sessions.
