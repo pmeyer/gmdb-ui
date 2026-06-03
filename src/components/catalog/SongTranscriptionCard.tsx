@@ -107,12 +107,14 @@ export function SongTranscriptionCard(song: SongTranscriptionCardProps) {
         overflow: "hidden",
       }}
     >
-      <MediaArtwork
-        imageUrl={song.albumArtUrl}
-        altText={`Album art for ${song.albumTitle ?? song.title}`}
-        fallbackLabel="No album art"
-        aspectRatio="1 / 1"
-      />
+      <Box sx={{ order: { xs: 2, sm: 0 } }}>
+        <MediaArtwork
+          imageUrl={song.albumArtUrl}
+          altText={`Album art for ${song.albumTitle ?? song.title}`}
+          fallbackLabel="No album art"
+          aspectRatio="1 / 1"
+        />
+      </Box>
 
       <Box sx={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
         <CardContent sx={{ flexGrow: 1, p: 2 }}>

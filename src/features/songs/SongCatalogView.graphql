@@ -1,0 +1,53 @@
+query SongCatalog($criteria: SongSearchCriteria! = {}) {
+  songSearch(criteria: $criteria) {
+    id
+    title
+    album {
+      id
+      title
+      trackNumber
+      releaseDate
+      albumArtUrl
+      artist {
+        id
+        name
+        type
+      }
+    }
+    artists {
+      id
+      name
+      type
+      roles
+    }
+    transcriptions {
+      id
+      url
+      pageNumber
+      pub {
+        id
+        name
+        type
+        pubDate
+        serialNumber
+        pubIndexId
+        details {
+          __typename
+          cover
+          ... on MagDetails {
+            volume
+            issue
+            issueName
+          }
+          ... on BookDetails {
+            edition
+          }
+        }
+      }
+      transcribers {
+        id
+        name
+      }
+    }
+  }
+}

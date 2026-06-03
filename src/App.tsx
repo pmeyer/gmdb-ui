@@ -2,11 +2,8 @@ import type { MouseEvent } from "react";
 import { useCallback, useEffect, useState } from "react";
 import {
   Box,
-  Chip,
   Container,
   CssBaseline,
-  Divider,
-  Paper,
   Stack,
   ToggleButton,
   ToggleButtonGroup,
@@ -15,6 +12,7 @@ import {
 
 import { PublicationCatalogView } from "./features/publications/PublicationCatalogView";
 import { PublicationDetailView } from "./features/publications/PublicationDetailView";
+import { SongCatalogView } from "./features/songs/SongCatalogView";
 
 type CatalogView = "publications" | "songs";
 type AppRoute =
@@ -30,29 +28,6 @@ interface CatalogViewSwitcherProps {
   selectedView: CatalogView;
   onViewChange: (view: CatalogView) => void;
 }
-
-interface DeferredCatalogContent {
-  eyebrow: string;
-  title: string;
-  description: string;
-  primaryLabel: string;
-  secondaryLabel: string;
-  tertiaryLabel: string;
-}
-
-interface EmptyCatalogPanelProps {
-  content: DeferredCatalogContent;
-}
-
-const songCatalogContent: DeferredCatalogContent = {
-  eyebrow: "Song Index",
-  title: "Find songs and their available transcriptions",
-  description:
-    "Song rows will surface album context, artist roles, transcribers, and the publication where each transcription appears.",
-  primaryLabel: "Album context",
-  secondaryLabel: "Artist roles",
-  tertiaryLabel: "Transcribers",
-};
 
 function readCurrentRoute(): AppRoute {
   const publicationDetailMatch =
@@ -109,70 +84,6 @@ function CatalogViewSwitcher({
       <ToggleButton value="publications">Publications</ToggleButton>
       <ToggleButton value="songs">Songs</ToggleButton>
     </ToggleButtonGroup>
-  );
-}
-
-function EmptyCatalogPanel({ content }: EmptyCatalogPanelProps) {
-  return (
-    <Paper
-      component="section"
-      elevation={0}
-      aria-labelledby="catalog-view-heading"
-      sx={{
-        border: 1,
-        borderColor: "divider",
-        borderRadius: 2,
-        overflow: "hidden",
-      }}
-    >
-      <Box
-        sx={{
-          bgcolor: "background.paper",
-          p: { xs: 2.5, sm: 4 },
-        }}
-      >
-        <Typography
-          component="p"
-          variant="overline"
-          sx={{ color: "secondary.main", fontWeight: 700 }}
-        >
-          {content.eyebrow}
-        </Typography>
-        <Typography
-          id="catalog-view-heading"
-          component="h2"
-          variant="h4"
-          sx={{
-            fontSize: { xs: "1.7rem", sm: "2.125rem" },
-            mt: 0.5,
-          }}
-        >
-          {content.title}
-        </Typography>
-        <Typography
-          variant="body1"
-          sx={{ color: "text.secondary", maxWidth: 720, mt: 1.5 }}
-        >
-          {content.description}
-        </Typography>
-      </Box>
-
-      <Divider />
-
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={1.5}
-        sx={{
-          alignItems: { xs: "stretch", sm: "center" },
-          bgcolor: "grey.50",
-          p: { xs: 2, sm: 2.5 },
-        }}
-      >
-        <Chip label={content.primaryLabel} sx={{ bgcolor: "background.paper" }} />
-        <Chip label={content.secondaryLabel} sx={{ bgcolor: "background.paper" }} />
-        <Chip label={content.tertiaryLabel} sx={{ bgcolor: "background.paper" }} />
-      </Stack>
-    </Paper>
   );
 }
 
@@ -291,7 +202,7 @@ function App() {
                 onPublicationSelected={handlePublicationSelected}
               />
             ) : (
-              <EmptyCatalogPanel content={songCatalogContent} />
+              <SongCatalogView />
             )}
           </Container>
         </Box>
