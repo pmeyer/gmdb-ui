@@ -324,4 +324,21 @@ describe("PublicationCatalogView", () => {
 
     expect(onAddPublication).toHaveBeenCalledOnce();
   });
+
+  it("uses the edit publication action callback when provided", async () => {
+    const user = userEvent.setup();
+    const onPublicationEditSelected = vi.fn();
+    server.use(publicationCatalogHandler(publicationCatalogResults));
+
+    renderWithProviders(
+      <PublicationCatalogView
+        onPublicationEditSelected={onPublicationEditSelected}
+        onPublicationSelected={vi.fn()}
+      />,
+    );
+
+    await user.click(await screen.findByRole("button", { name: "Edit Guitar World" }));
+
+    expect(onPublicationEditSelected).toHaveBeenCalledWith("1");
+  });
 });

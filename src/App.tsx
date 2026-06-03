@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 
 import { AddPublicationView } from "./features/publications/AddPublicationView";
+import { EditPublicationView } from "./features/publications/EditPublicationView";
 import { PublicationCatalogView } from "./features/publications/PublicationCatalogView";
 import { PublicationDetailView } from "./features/publications/PublicationDetailView";
 import { SongCatalogView } from "./features/songs/SongCatalogView";
@@ -30,6 +31,10 @@ type AppRoute =
       publicationId: string;
     }
   | {
+      name: "editPublication";
+      publicationId: string;
+    }
+  | {
       name: "transcriptionDetail";
       publicationId: string;
       transcriptionId: string;
@@ -45,6 +50,16 @@ function readCurrentRoute(): AppRoute {
   if (/^\/publications\/add\/?$/.test(window.location.pathname)) {
     return {
       name: "addPublication",
+    };
+  }
+
+  const publicationEditMatch =
+    /^\/publications\/([^/]+)\/edit\/?$/.exec(window.location.pathname);
+
+  if (publicationEditMatch !== null) {
+    return {
+      name: "editPublication",
+      publicationId: decodeURIComponent(publicationEditMatch[1]),
     };
   }
 
@@ -187,6 +202,17 @@ function App() {
     });
   }, []);
 
+  const handleEditPublication = useCallback((publicationId: string) => {
+    const nextPath = `/publications/${encodeURIComponent(publicationId)}/edit`;
+
+    setSelectedView("publications");
+    pushRoute(nextPath);
+    setRoute({
+      name: "editPublication",
+      publicationId,
+    });
+  }, []);
+
   const handleTranscriptionSelected = useCallback(
     (
       publicationId: string,
@@ -298,6 +324,14 @@ function App() {
                 }}
                 onSaved={handlePublicationSelected}
               />
+            ) : route.name === "editPublication" ? (
+              <EditPublicationView
+                publicationId={route.publicationId}
+                onCancel={() => {
+                  handlePublicationSelected(route.publicationId);
+                }}
+                onSaved={handlePublicationSelected}
+              />
             ) : route.name === "transcriptionDetail" ? (
               <TranscriptionDetailView
                 publicationId={route.publicationId}
@@ -313,6 +347,9 @@ function App() {
                 onBackToPublications={() => {
                   navigateToCatalog("publications");
                 }}
+                onEditPublication={() => {
+                  handleEditPublication(route.publicationId);
+                }}
                 onTranscriptionSelected={(transcriptionId) => {
                   handleTranscriptionSelected(
                     route.publicationId,
@@ -324,6 +361,7 @@ function App() {
             ) : selectedView === "publications" ? (
               <PublicationCatalogView
                 onAddPublication={handleAddPublication}
+                onPublicationEditSelected={handleEditPublication}
                 onPublicationSelected={handlePublicationSelected}
               />
             ) : (

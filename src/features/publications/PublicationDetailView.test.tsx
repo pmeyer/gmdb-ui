@@ -131,6 +131,7 @@ describe("PublicationDetailView", () => {
       <PublicationDetailView
         publicationId="1"
         onBackToPublications={vi.fn()}
+        onEditPublication={vi.fn()}
         onTranscriptionSelected={vi.fn()}
       />,
     );
@@ -150,6 +151,7 @@ describe("PublicationDetailView", () => {
       <PublicationDetailView
         publicationId="1"
         onBackToPublications={vi.fn()}
+        onEditPublication={vi.fn()}
         onTranscriptionSelected={vi.fn()}
       />,
     );
@@ -186,6 +188,7 @@ describe("PublicationDetailView", () => {
       <PublicationDetailView
         publicationId="2"
         onBackToPublications={vi.fn()}
+        onEditPublication={vi.fn()}
         onTranscriptionSelected={vi.fn()}
       />,
     );
@@ -205,6 +208,7 @@ describe("PublicationDetailView", () => {
       <PublicationDetailView
         publicationId="missing"
         onBackToPublications={vi.fn()}
+        onEditPublication={vi.fn()}
         onTranscriptionSelected={vi.fn()}
       />,
     );
@@ -230,6 +234,7 @@ describe("PublicationDetailView", () => {
       <PublicationDetailView
         publicationId="1"
         onBackToPublications={vi.fn()}
+        onEditPublication={vi.fn()}
         onTranscriptionSelected={vi.fn()}
       />,
     );
@@ -241,23 +246,23 @@ describe("PublicationDetailView", () => {
     ).toBeInTheDocument();
   });
 
-  it("keeps the edit action visible as a deferred workflow", async () => {
+  it("routes the edit action through the supplied callback", async () => {
     const user = userEvent.setup();
+    const onEditPublication = vi.fn();
     server.use(publicationDetailHandler(publicationDetailResults));
 
     renderWithProviders(
       <PublicationDetailView
         publicationId="1"
         onBackToPublications={vi.fn()}
+        onEditPublication={onEditPublication}
         onTranscriptionSelected={vi.fn()}
       />,
     );
 
     await user.click(await screen.findByRole("button", { name: "Edit publication" }));
 
-    expect(
-      await screen.findByText("Edit publication is not available yet."),
-    ).toBeInTheDocument();
+    expect(onEditPublication).toHaveBeenCalledOnce();
   });
 
   it("routes transcription actions to the selected transcription", async () => {
@@ -269,6 +274,7 @@ describe("PublicationDetailView", () => {
       <PublicationDetailView
         publicationId="1"
         onBackToPublications={vi.fn()}
+        onEditPublication={vi.fn()}
         onTranscriptionSelected={onTranscriptionSelected}
       />,
     );

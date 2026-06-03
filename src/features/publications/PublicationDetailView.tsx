@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useQuery } from "@apollo/client/react";
 import {
   Alert,
@@ -8,7 +8,6 @@ import {
   Divider,
   Paper,
   Skeleton,
-  Snackbar,
   Stack,
   Typography,
 } from "@mui/material";
@@ -25,6 +24,7 @@ import {
 interface PublicationDetailViewProps {
   publicationId: string;
   onBackToPublications: () => void;
+  onEditPublication: () => void;
   onTranscriptionSelected: (transcriptionId: string) => void;
 }
 
@@ -169,9 +169,9 @@ function PublicationTranscriptionList({
 export function PublicationDetailView({
   publicationId,
   onBackToPublications,
+  onEditPublication,
   onTranscriptionSelected,
 }: PublicationDetailViewProps) {
-  const [notice, setNotice] = useState<string | null>(null);
   const { data, error, loading } = useQuery(PublicationDetailCatalogDocument, {
     variables: {
       id: publicationId,
@@ -188,20 +188,12 @@ export function PublicationDetailView({
     [publication],
   );
 
-  const handleEditPublication = useCallback(() => {
-    setNotice("Edit publication is not available yet.");
-  }, []);
-
   const handleViewTranscription = useCallback(
     (transcription: PublicationTranscriptionItem) => {
       onTranscriptionSelected(transcription.id);
     },
     [onTranscriptionSelected],
   );
-
-  const handleCloseNotice = useCallback(() => {
-    setNotice(null);
-  }, []);
 
   return (
     <Stack component="section" spacing={{ xs: 3, sm: 4 }}>
@@ -298,7 +290,7 @@ export function PublicationDetailView({
 
                 <Box>
                   <Button
-                    onClick={handleEditPublication}
+                    onClick={onEditPublication}
                     type="button"
                     variant="outlined"
                     sx={{ textTransform: "none" }}
@@ -330,14 +322,6 @@ export function PublicationDetailView({
               onViewTranscription={handleViewTranscription}
             />
           </Stack>
-
-          <Snackbar
-            autoHideDuration={4000}
-            key={notice}
-            message={notice}
-            onClose={handleCloseNotice}
-            open={notice !== null}
-          />
         </>
       )}
     </Stack>

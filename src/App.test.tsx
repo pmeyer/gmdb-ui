@@ -237,7 +237,7 @@ describe("App", () => {
       screen.getByRole("heading", { name: "Add publication" }),
     ).toBeInTheDocument();
     expect(
-      await screen.findByRole("combobox", { name: "Existing magazine" }),
+      await screen.findByRole("combobox", { name: "Magazine name" }),
     ).toBeInTheDocument();
   });
 
@@ -283,6 +283,46 @@ describe("App", () => {
       await screen.findByText("Table of contents for available guitar transcriptions"),
     ).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Little Wing" })).toBeInTheDocument();
+  });
+
+  it("navigates from a publication card to publication editing", async () => {
+    const user = userEvent.setup();
+    server.use(publicationCatalogHandler(), publicationDetailHandler());
+
+    renderWithProviders(<App />);
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "Edit Guitar World",
+      }),
+    );
+
+    expect(window.location.pathname).toBe("/publications/1/edit");
+    expect(
+      await screen.findByRole("heading", { name: "Edit publication" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Magazine name" })).toHaveValue(
+      "Guitar World",
+    );
+  });
+
+  it("navigates from publication details to publication editing", async () => {
+    const user = userEvent.setup();
+    server.use(publicationCatalogHandler(), publicationDetailHandler());
+
+    renderWithProviders(<App />);
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "View details for Guitar World",
+      }),
+    );
+    await user.click(await screen.findByRole("button", { name: "Edit publication" }));
+
+    expect(window.location.pathname).toBe("/publications/1/edit");
+    expect(
+      await screen.findByRole("heading", { name: "Edit publication" }),
+    ).toBeInTheDocument();
   });
 
   it("navigates from a publication transcription card to the transcription viewer", async () => {

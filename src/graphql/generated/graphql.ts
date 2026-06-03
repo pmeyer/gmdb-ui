@@ -103,6 +103,8 @@ export type BookInput = {
   info?: BookEditionInput;
   /** Date associated with this book edition. When omitted, the publication is stored without a publication date. */
   pubDate?: unknown;
+  /** Existing publication id to update. Omit to create a new book edition. */
+  pubId?: unknown;
   /** Optional transcriptions appearing in the book edition. */
   transcriptions?: Array<TranscriptionInput> | null | undefined;
 };
@@ -118,6 +120,8 @@ export type MagazineInput = {
   info: MagazineIssueInput;
   /** Date associated with this magazine issue. When omitted, the publication is stored without a publication date. */
   pubDate?: unknown;
+  /** Existing publication id to update. Omit to create a new magazine issue. */
+  pubId?: unknown;
   /** Optional transcriptions appearing in the magazine issue. */
   transcriptions?: Array<TranscriptionInput> | null | undefined;
 };
