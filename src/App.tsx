@@ -13,8 +13,10 @@ import {
 import { PublicationCatalogView } from "./features/publications/PublicationCatalogView";
 import { PublicationDetailView } from "./features/publications/PublicationDetailView";
 import { SongCatalogView } from "./features/songs/SongCatalogView";
+import { TranscriptionDetailView } from "./features/transcriptions/TranscriptionDetailView";
 
 type CatalogView = "publications" | "songs";
+type TranscriptionBackContext = "publication" | "songs";
 type AppRoute =
   | {
       name: "catalog";
@@ -22,6 +24,12 @@ type AppRoute =
   | {
       name: "publicationDetail";
       publicationId: string;
+    }
+  | {
+      name: "transcriptionDetail";
+      publicationId: string;
+      transcriptionId: string;
+      backContext: TranscriptionBackContext;
     };
 
 interface CatalogViewSwitcherProps {
@@ -30,6 +38,23 @@ interface CatalogViewSwitcherProps {
 }
 
 function readCurrentRoute(): AppRoute {
+  const transcriptionDetailMatch =
+    /^\/publications\/([^/]+)\/transcriptions\/([^/]+)\/?$/.exec(
+      window.location.pathname,
+    );
+
+  if (transcriptionDetailMatch !== null) {
+    const searchParams = new URLSearchParams(window.location.search);
+    const requestedBackContext = searchParams.get("from");
+
+    return {
+      name: "transcriptionDetail",
+      publicationId: decodeURIComponent(transcriptionDetailMatch[1]),
+      transcriptionId: decodeURIComponent(transcriptionDetailMatch[2]),
+      backContext: requestedBackContext === "songs" ? "songs" : "publication",
+    };
+  }
+
   const publicationDetailMatch =
     /^\/publications\/([^/]+)\/?$/.exec(window.location.pathname);
 
@@ -41,6 +66,16 @@ function readCurrentRoute(): AppRoute {
   }
 
   return { name: "catalog" };
+}
+
+function readCurrentCatalogView(): CatalogView {
+  const searchParams = new URLSearchParams(window.location.search);
+
+  return searchParams.get("view") === "songs" ? "songs" : "publications";
+}
+
+function catalogPath(view: CatalogView) {
+  return view === "songs" ? "/?view=songs" : "/";
 }
 
 function pushRoute(path: string) {
@@ -89,11 +124,19 @@ function CatalogViewSwitcher({
 
 function App() {
   const [route, setRoute] = useState<AppRoute>(() => readCurrentRoute());
-  const [selectedView, setSelectedView] = useState<CatalogView>("publications");
+  const [selectedView, setSelectedView] = useState<CatalogView>(() =>
+    readCurrentCatalogView(),
+  );
 
   useEffect(() => {
     function handlePopState() {
-      setRoute(readCurrentRoute());
+      const nextRoute = readCurrentRoute();
+
+      setRoute(nextRoute);
+
+      if (nextRoute.name === "catalog") {
+        setSelectedView(readCurrentCatalogView());
+      }
     }
 
     window.addEventListener("popstate", handlePopState);
@@ -103,14 +146,15 @@ function App() {
     };
   }, []);
 
-  const navigateToCatalog = useCallback(() => {
-    pushRoute("/");
+  const navigateToCatalog = useCallback((view: CatalogView = "publications") => {
+    pushRoute(catalogPath(view));
+    setSelectedView(view);
     setRoute({ name: "catalog" });
   }, []);
 
   const handleViewChange = useCallback((nextView: CatalogView) => {
     setSelectedView(nextView);
-    pushRoute("/");
+    pushRoute(catalogPath(nextView));
     setRoute({ name: "catalog" });
   }, []);
 
@@ -124,6 +168,43 @@ function App() {
       publicationId,
     });
   }, []);
+
+  const handleTranscriptionSelected = useCallback(
+    (
+      publicationId: string,
+      transcriptionId: string,
+      backContext: TranscriptionBackContext,
+    ) => {
+      const nextPath = `/publications/${encodeURIComponent(
+        publicationId,
+      )}/transcriptions/${encodeURIComponent(transcriptionId)}${
+        backContext === "songs" ? "?from=songs" : ""
+      }`;
+
+      pushRoute(nextPath);
+      setRoute({
+        name: "transcriptionDetail",
+        publicationId,
+        transcriptionId,
+        backContext,
+      });
+    },
+    [],
+  );
+
+  const handleBackFromTranscription = useCallback(() => {
+    if (route.name !== "transcriptionDetail") {
+      navigateToCatalog();
+      return;
+    }
+
+    if (route.backContext === "songs") {
+      navigateToCatalog("songs");
+      return;
+    }
+
+    handlePublicationSelected(route.publicationId);
+  }, [handlePublicationSelected, navigateToCatalog, route]);
 
   return (
     <>
@@ -192,17 +273,43 @@ function App() {
               py: { xs: 3, sm: 5 },
             }}
           >
-            {route.name === "publicationDetail" ? (
+            {route.name === "transcriptionDetail" ? (
+              <TranscriptionDetailView
+                publicationId={route.publicationId}
+                transcriptionId={route.transcriptionId}
+                backLabel={
+                  route.backContext === "songs" ? "Back to songs" : "Back to publication"
+                }
+                onBack={handleBackFromTranscription}
+              />
+            ) : route.name === "publicationDetail" ? (
               <PublicationDetailView
                 publicationId={route.publicationId}
-                onBackToPublications={navigateToCatalog}
+                onBackToPublications={() => {
+                  navigateToCatalog("publications");
+                }}
+                onTranscriptionSelected={(transcriptionId) => {
+                  handleTranscriptionSelected(
+                    route.publicationId,
+                    transcriptionId,
+                    "publication",
+                  );
+                }}
               />
             ) : selectedView === "publications" ? (
               <PublicationCatalogView
                 onPublicationSelected={handlePublicationSelected}
               />
             ) : (
-              <SongCatalogView />
+              <SongCatalogView
+                onTranscriptionSelected={(publicationId, transcriptionId) => {
+                  handleTranscriptionSelected(
+                    publicationId,
+                    transcriptionId,
+                    "songs",
+                  );
+                }}
+              />
             )}
           </Container>
         </Box>

@@ -37,6 +37,16 @@ function publicationDetailHandler() {
   );
 }
 
+function transcriptionDetailHandler() {
+  return graphql.query("TranscriptionDetailCatalog", () =>
+    HttpResponse.json({
+      data: {
+        pubSearch: publicationResults,
+      },
+    }),
+  );
+}
+
 function songCatalogHandler() {
   return graphql.query("SongCatalog", () =>
     HttpResponse.json({
@@ -67,11 +77,43 @@ const publicationResults = [
       {
         __typename: "PubTranscription",
         id: "101",
+        url: "/resources/transcriptions/101/file",
+        pageNumber: 48,
         song: {
           __typename: "Song",
           id: "201",
           title: "Little Wing",
+          album: {
+            __typename: "SongAlbum",
+            id: "301",
+            title: "Axis: Bold as Love",
+            trackNumber: 6,
+            releaseDate: "1967-12-01",
+            albumArtUrl: "/resources/albums/301/cover",
+            artist: {
+              __typename: "Artist",
+              id: "401",
+              name: "The Jimi Hendrix Experience",
+              type: "BAND",
+            },
+          },
+          artists: [
+            {
+              __typename: "SongArtist",
+              id: "402",
+              name: "Jimi Hendrix",
+              type: "PERSON",
+              roles: ["PERFORMED_BY", "MUSIC_BY", "WORDS_BY"],
+            },
+          ],
         },
+        transcribers: [
+          {
+            __typename: "Transcriber",
+            id: "501",
+            name: "Jane Smith",
+          },
+        ],
       },
     ],
   },
@@ -204,5 +246,56 @@ describe("App", () => {
       await screen.findByText("Table of contents for available guitar transcriptions"),
     ).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Little Wing" })).toBeInTheDocument();
+  });
+
+  it("navigates from a publication transcription card to the transcription viewer", async () => {
+    const user = userEvent.setup();
+    server.use(
+      publicationCatalogHandler(),
+      publicationDetailHandler(),
+      transcriptionDetailHandler(),
+    );
+
+    renderWithProviders(<App />);
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "View details for Guitar World",
+      }),
+    );
+    await user.click(
+      await screen.findByRole("button", {
+        name: "View transcription for Little Wing",
+      }),
+    );
+
+    expect(window.location.pathname).toBe("/publications/1/transcriptions/101");
+    expect(window.location.search).toBe("");
+    expect(
+      await screen.findByRole("heading", { name: "Little Wing" }),
+    ).toBeInTheDocument();
+    expect(screen.getByTitle("PDF viewer for Little Wing")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Back to publication" })).toBeInTheDocument();
+  });
+
+  it("navigates from a song transcription card to the transcription viewer", async () => {
+    const user = userEvent.setup();
+    server.use(emptyPublicationCatalogHandler(), songCatalogHandler(), transcriptionDetailHandler());
+
+    renderWithProviders(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Songs" }));
+    await user.click(
+      await screen.findByRole("button", {
+        name: "View transcription for Little Wing",
+      }),
+    );
+
+    expect(window.location.pathname).toBe("/publications/1/transcriptions/101");
+    expect(window.location.search).toBe("?from=songs");
+    expect(
+      await screen.findByRole("heading", { name: "Little Wing" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Back to songs" })).toBeInTheDocument();
   });
 });

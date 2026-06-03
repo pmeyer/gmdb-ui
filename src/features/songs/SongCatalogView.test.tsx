@@ -1,5 +1,5 @@
 import { graphql, HttpResponse, delay } from "msw";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -366,20 +366,20 @@ describe("SongCatalogView", () => {
     ).toBeInTheDocument();
   });
 
-  it("keeps the view transcription action visible as a deferred workflow", async () => {
+  it("routes the view transcription action with publication context", async () => {
     const user = userEvent.setup();
+    const onTranscriptionSelected = vi.fn();
     server.use(songCatalogHandler(songCatalogResults));
 
-    renderWithProviders(<SongCatalogView />);
+    renderWithProviders(
+      <SongCatalogView onTranscriptionSelected={onTranscriptionSelected} />,
+    );
 
     await user.click(
       await screen.findByRole("button", { name: "View transcription for Little Wing" }),
     );
-    expect(
-      await screen.findByText(
-        "Transcription viewer for Little Wing is not available yet.",
-      ),
-    ).toBeInTheDocument();
+
+    expect(onTranscriptionSelected).toHaveBeenCalledWith("1", "101");
   });
 
   it("keeps the edit transcription action visible as a deferred workflow", async () => {
