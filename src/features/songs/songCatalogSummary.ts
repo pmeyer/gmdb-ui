@@ -9,6 +9,7 @@ type TranscriptionPublication = NonNullable<SongTranscription["pub"]>;
 
 export interface SongTranscriptionCatalogItem {
   id: string;
+  publicationId?: string;
   url?: string;
   cardProps: SongTranscriptionCardProps;
 }
@@ -94,12 +95,27 @@ function transcriberNames(transcription: SongTranscription) {
   return names.length > 0 ? names : undefined;
 }
 
+function publicationId(transcription: SongTranscription) {
+  if (transcription.pub === null) {
+    return undefined;
+  }
+
+  const { id } = transcription.pub;
+
+  if (typeof id === "string" || typeof id === "number") {
+    return id.toString();
+  }
+
+  return undefined;
+}
+
 function mapSongTranscription(
   song: SongSearchResult,
   transcription: SongTranscription,
 ): SongTranscriptionCatalogItem {
   return {
     id: String(transcription.id),
+    publicationId: publicationId(transcription),
     url: optionalText(transcription.url),
     cardProps: {
       title: song.title,

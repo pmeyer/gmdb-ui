@@ -5,6 +5,7 @@ import type { PubType } from "../../graphql/generated/graphql";
 
 interface PublicationTranscriptionSummary {
   id: unknown;
+  pageNumber?: number | null;
   song: {
     title: string;
   };
@@ -42,6 +43,7 @@ export interface PublicationMetadataItem {
 export interface PublicationTranscriptionItem {
   id: string;
   title: string;
+  pageNumber?: string;
 }
 
 export interface PublicationDetailSummary {
@@ -163,6 +165,10 @@ export function mapPublicationToDetailSummary(
         ?.map((transcription) => ({
           id: String(transcription.id),
           title: transcription.song.title,
+          pageNumber:
+            transcription.pageNumber !== null && transcription.pageNumber !== undefined
+              ? transcription.pageNumber.toString()
+              : undefined,
         }))
         .filter((transcription) => transcription.title.trim().length > 0) ?? [],
   };

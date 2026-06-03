@@ -47,6 +47,13 @@ interface SongCatalogToolbarProps {
   onSearchSubmit: () => void;
 }
 
+interface SongCatalogViewProps {
+  onTranscriptionSelected?: (
+    publicationId: string,
+    transcriptionId: string,
+  ) => void;
+}
+
 const emptySongFilters: SongFilters = {
   titleSearch: "",
   artistSearch: "",
@@ -303,7 +310,7 @@ function SongCatalogToolbar({
   );
 }
 
-export function SongCatalogView() {
+export function SongCatalogView({ onTranscriptionSelected }: SongCatalogViewProps) {
   const [appliedFilters, setAppliedFilters] =
     useState<SongFilters>(emptySongFilters);
   const [draftFilters, setDraftFilters] = useState<SongFilters>(emptySongFilters);
@@ -362,13 +369,19 @@ export function SongCatalogView() {
 
   const handleViewTranscription = useCallback(
     (transcription: SongTranscriptionCatalogItem) => {
+      if (
+        onTranscriptionSelected !== undefined &&
+        transcription.publicationId !== undefined
+      ) {
+        onTranscriptionSelected(transcription.publicationId, transcription.id);
+        return;
+      }
+
       setNotice(
-        transcription.url !== undefined
-          ? `Transcription viewer for ${transcription.cardProps.title} is not available yet.`
-          : `No transcription file is cataloged for ${transcription.cardProps.title}.`,
+        `Source publication is not cataloged for ${transcription.cardProps.title}.`,
       );
     },
-    [],
+    [onTranscriptionSelected],
   );
 
   const handleEditTranscription = useCallback(

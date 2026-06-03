@@ -7,3 +7,4 @@ Slice-specific design notes:
 - [Publication Detail View](design/publication-detail-view.md)
 - [Publication Grid and Filters](design/publication-grid.md)
 - [Song-Centric View](design/song-centric-view.md)
+- [Transcription Detail Viewer](design/transcription-detail-viewer.md)

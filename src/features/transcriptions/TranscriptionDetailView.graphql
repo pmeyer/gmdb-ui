@@ -1,0 +1,53 @@
+query TranscriptionDetailCatalog($publicationId: Long) {
+  pubSearch(criteria: { id: $publicationId }) {
+    id
+    name
+    type
+    pubDate
+    serialNumber
+    pubIndexId
+    details {
+      __typename
+      cover
+      ... on MagDetails {
+        volume
+        issue
+        issueName
+      }
+      ... on BookDetails {
+        edition
+      }
+    }
+    transcriptions {
+      id
+      url
+      pageNumber
+      song {
+        id
+        title
+        album {
+          id
+          title
+          trackNumber
+          releaseDate
+          albumArtUrl
+          artist {
+            id
+            name
+            type
+          }
+        }
+        artists {
+          id
+          name
+          type
+          roles
+        }
+      }
+      transcribers {
+        id
+        name
+      }
+    }
+  }
+}

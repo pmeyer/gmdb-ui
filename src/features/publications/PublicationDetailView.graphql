@@ -20,6 +20,7 @@ query PublicationDetailCatalog($id: Long) {
     }
     transcriptions {
       id
+      pageNumber
       song {
         id
         title

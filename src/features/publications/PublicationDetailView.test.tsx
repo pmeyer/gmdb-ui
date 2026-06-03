@@ -77,6 +77,7 @@ const publicationDetailResults = [
       {
         __typename: "PubTranscription",
         id: "101",
+        pageNumber: 48,
         song: {
           __typename: "Song",
           id: "201",
@@ -86,6 +87,7 @@ const publicationDetailResults = [
       {
         __typename: "PubTranscription",
         id: "102",
+        pageNumber: 62,
         song: {
           __typename: "Song",
           id: "202",
@@ -126,7 +128,11 @@ describe("PublicationDetailView", () => {
     );
 
     renderWithProviders(
-      <PublicationDetailView publicationId="1" onBackToPublications={vi.fn()} />,
+      <PublicationDetailView
+        publicationId="1"
+        onBackToPublications={vi.fn()}
+        onTranscriptionSelected={vi.fn()}
+      />,
     );
 
     expect(screen.getByLabelText("Loading publication details")).toBeInTheDocument();
@@ -141,7 +147,11 @@ describe("PublicationDetailView", () => {
     );
 
     renderWithProviders(
-      <PublicationDetailView publicationId="1" onBackToPublications={vi.fn()} />,
+      <PublicationDetailView
+        publicationId="1"
+        onBackToPublications={vi.fn()}
+        onTranscriptionSelected={vi.fn()}
+      />,
     );
 
     expect(
@@ -162,7 +172,8 @@ describe("PublicationDetailView", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Little Wing" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Barracuda" })).toBeInTheDocument();
-    expect(screen.getAllByText("Guitar World, June 1, 1992")).toHaveLength(2);
+    expect(screen.getByText("Guitar World, June 1, 1992 · Page 48")).toBeInTheDocument();
+    expect(screen.getByText("Guitar World, June 1, 1992 · Page 62")).toBeInTheDocument();
     expect(requests).toContainEqual({
       id: "1",
     });
@@ -172,7 +183,11 @@ describe("PublicationDetailView", () => {
     server.use(publicationDetailHandler(publicationDetailResults));
 
     renderWithProviders(
-      <PublicationDetailView publicationId="2" onBackToPublications={vi.fn()} />,
+      <PublicationDetailView
+        publicationId="2"
+        onBackToPublications={vi.fn()}
+        onTranscriptionSelected={vi.fn()}
+      />,
     );
 
     expect(
@@ -187,7 +202,11 @@ describe("PublicationDetailView", () => {
     server.use(publicationDetailHandler(publicationDetailResults));
 
     renderWithProviders(
-      <PublicationDetailView publicationId="missing" onBackToPublications={vi.fn()} />,
+      <PublicationDetailView
+        publicationId="missing"
+        onBackToPublications={vi.fn()}
+        onTranscriptionSelected={vi.fn()}
+      />,
     );
 
     expect(
@@ -208,7 +227,11 @@ describe("PublicationDetailView", () => {
     );
 
     renderWithProviders(
-      <PublicationDetailView publicationId="1" onBackToPublications={vi.fn()} />,
+      <PublicationDetailView
+        publicationId="1"
+        onBackToPublications={vi.fn()}
+        onTranscriptionSelected={vi.fn()}
+      />,
     );
 
     expect(
@@ -223,7 +246,11 @@ describe("PublicationDetailView", () => {
     server.use(publicationDetailHandler(publicationDetailResults));
 
     renderWithProviders(
-      <PublicationDetailView publicationId="1" onBackToPublications={vi.fn()} />,
+      <PublicationDetailView
+        publicationId="1"
+        onBackToPublications={vi.fn()}
+        onTranscriptionSelected={vi.fn()}
+      />,
     );
 
     await user.click(await screen.findByRole("button", { name: "Edit publication" }));
@@ -233,12 +260,17 @@ describe("PublicationDetailView", () => {
     ).toBeInTheDocument();
   });
 
-  it("keeps transcription actions visible as deferred workflows", async () => {
+  it("routes transcription actions to the selected transcription", async () => {
     const user = userEvent.setup();
+    const onTranscriptionSelected = vi.fn();
     server.use(publicationDetailHandler(publicationDetailResults));
 
     renderWithProviders(
-      <PublicationDetailView publicationId="1" onBackToPublications={vi.fn()} />,
+      <PublicationDetailView
+        publicationId="1"
+        onBackToPublications={vi.fn()}
+        onTranscriptionSelected={onTranscriptionSelected}
+      />,
     );
 
     await user.click(
@@ -247,10 +279,6 @@ describe("PublicationDetailView", () => {
       }),
     );
 
-    expect(
-      await screen.findByText(
-        "Transcription details for Little Wing are not available yet.",
-      ),
-    ).toBeInTheDocument();
+    expect(onTranscriptionSelected).toHaveBeenCalledWith("101");
   });
 });

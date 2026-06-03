@@ -25,6 +25,7 @@ import {
 interface PublicationDetailViewProps {
   publicationId: string;
   onBackToPublications: () => void;
+  onTranscriptionSelected: (transcriptionId: string) => void;
 }
 
 interface PublicationMetadataListProps {
@@ -153,6 +154,7 @@ function PublicationTranscriptionList({
         <Box component="li" key={transcription.id} sx={{ minWidth: 0 }}>
           <SongTranscriptionCard
             title={transcription.title}
+            pageNumber={transcription.pageNumber}
             publicationSummary={publicationSummary}
             onViewTranscription={() => {
               onViewTranscription(transcription);
@@ -167,6 +169,7 @@ function PublicationTranscriptionList({
 export function PublicationDetailView({
   publicationId,
   onBackToPublications,
+  onTranscriptionSelected,
 }: PublicationDetailViewProps) {
   const [notice, setNotice] = useState<string | null>(null);
   const { data, error, loading } = useQuery(PublicationDetailCatalogDocument, {
@@ -191,11 +194,9 @@ export function PublicationDetailView({
 
   const handleViewTranscription = useCallback(
     (transcription: PublicationTranscriptionItem) => {
-      setNotice(
-        `Transcription details for ${transcription.title} are not available yet.`,
-      );
+      onTranscriptionSelected(transcription.id);
     },
-    [],
+    [onTranscriptionSelected],
   );
 
   const handleCloseNotice = useCallback(() => {
