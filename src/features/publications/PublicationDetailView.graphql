@@ -1,0 +1,29 @@
+query PublicationDetailCatalog($id: Long) {
+  pubSearch(criteria: { id: $id }) {
+    id
+    name
+    type
+    pubDate
+    serialNumber
+    pubIndexId
+    details {
+      __typename
+      cover
+      ... on MagDetails {
+        volume
+        issue
+        issueName
+      }
+      ... on BookDetails {
+        edition
+      }
+    }
+    transcriptions {
+      id
+      song {
+        id
+        title
+      }
+    }
+  }
+}

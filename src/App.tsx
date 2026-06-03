@@ -1,5 +1,5 @@
 import type { MouseEvent } from "react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Box,
   Chip,
@@ -14,8 +14,17 @@ import {
 } from "@mui/material";
 
 import { PublicationCatalogView } from "./features/publications/PublicationCatalogView";
+import { PublicationDetailView } from "./features/publications/PublicationDetailView";
 
 type CatalogView = "publications" | "songs";
+type AppRoute =
+  | {
+      name: "catalog";
+    }
+  | {
+      name: "publicationDetail";
+      publicationId: string;
+    };
 
 interface CatalogViewSwitcherProps {
   selectedView: CatalogView;
@@ -44,6 +53,24 @@ const songCatalogContent: DeferredCatalogContent = {
   secondaryLabel: "Artist roles",
   tertiaryLabel: "Transcribers",
 };
+
+function readCurrentRoute(): AppRoute {
+  const publicationDetailMatch =
+    /^\/publications\/([^/]+)\/?$/.exec(window.location.pathname);
+
+  if (publicationDetailMatch !== null) {
+    return {
+      name: "publicationDetail",
+      publicationId: decodeURIComponent(publicationDetailMatch[1]),
+    };
+  }
+
+  return { name: "catalog" };
+}
+
+function pushRoute(path: string) {
+  window.history.pushState(null, "", path);
+}
 
 function CatalogViewSwitcher({
   selectedView,
@@ -150,10 +177,41 @@ function EmptyCatalogPanel({ content }: EmptyCatalogPanelProps) {
 }
 
 function App() {
+  const [route, setRoute] = useState<AppRoute>(() => readCurrentRoute());
   const [selectedView, setSelectedView] = useState<CatalogView>("publications");
+
+  useEffect(() => {
+    function handlePopState() {
+      setRoute(readCurrentRoute());
+    }
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
+
+  const navigateToCatalog = useCallback(() => {
+    pushRoute("/");
+    setRoute({ name: "catalog" });
+  }, []);
 
   const handleViewChange = useCallback((nextView: CatalogView) => {
     setSelectedView(nextView);
+    pushRoute("/");
+    setRoute({ name: "catalog" });
+  }, []);
+
+  const handlePublicationSelected = useCallback((publicationId: string) => {
+    const nextPath = `/publications/${encodeURIComponent(publicationId)}`;
+
+    setSelectedView("publications");
+    pushRoute(nextPath);
+    setRoute({
+      name: "publicationDetail",
+      publicationId,
+    });
   }, []);
 
   return (
@@ -223,8 +281,15 @@ function App() {
               py: { xs: 3, sm: 5 },
             }}
           >
-            {selectedView === "publications" ? (
-              <PublicationCatalogView />
+            {route.name === "publicationDetail" ? (
+              <PublicationDetailView
+                publicationId={route.publicationId}
+                onBackToPublications={navigateToCatalog}
+              />
+            ) : selectedView === "publications" ? (
+              <PublicationCatalogView
+                onPublicationSelected={handlePublicationSelected}
+              />
             ) : (
               <EmptyCatalogPanel content={songCatalogContent} />
             )}
