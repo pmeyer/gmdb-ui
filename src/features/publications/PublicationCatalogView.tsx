@@ -33,6 +33,10 @@ interface PublicationCatalogStateProps {
   message: string;
 }
 
+interface PublicationCatalogViewProps {
+  onPublicationSelected?: (publicationId: string) => void;
+}
+
 interface PublicationsToolbarProps {
   activeFilterLabels: string[];
   canReset: boolean;
@@ -257,7 +261,9 @@ function PublicationLoadingGrid() {
   );
 }
 
-export function PublicationCatalogView() {
+export function PublicationCatalogView({
+  onPublicationSelected,
+}: PublicationCatalogViewProps) {
   const [appliedSearchName, setAppliedSearchName] = useState("");
   const [isAddPublicationNoticeOpen, setIsAddPublicationNoticeOpen] =
     useState(false);
@@ -324,6 +330,13 @@ export function PublicationCatalogView() {
     setSearchDraft("");
     setTypeFilter(defaultTypeFilter);
   }, []);
+
+  const handlePublicationSelected = useCallback(
+    (publicationId: unknown) => {
+      onPublicationSelected?.(String(publicationId));
+    },
+    [onPublicationSelected],
+  );
 
   return (
     <Stack component="section" spacing={{ xs: 3, sm: 4 }}>
@@ -409,7 +422,16 @@ export function PublicationCatalogView() {
         <PublicationGrid>
           {publications.map((publication) => (
             <PublicationGridItem key={String(publication.id)}>
-              <PublicationCard {...publication.cardProps} />
+              <PublicationCard
+                {...publication.cardProps}
+                onViewDetails={
+                  onPublicationSelected !== undefined
+                    ? () => {
+                        handlePublicationSelected(publication.id);
+                      }
+                    : undefined
+                }
+              />
             </PublicationGridItem>
           ))}
         </PublicationGrid>

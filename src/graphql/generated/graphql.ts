@@ -12,6 +12,8 @@ export type PubSearchCriteria = {
    * is applied.
    */
   hasTranscriptions?: boolean | null | undefined;
+  /** Publication id to match. */
+  id?: unknown;
   /** Case-insensitive pattern match against publication index name, magazine issue name, or book edition. */
   searchName?: string | null | undefined;
   /** Return publications of the supplied type. */
