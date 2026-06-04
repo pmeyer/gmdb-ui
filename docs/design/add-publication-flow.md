@@ -2,15 +2,16 @@
 
 ## Purpose
 
-The Add Publication flow lets a user add a magazine issue or book edition from the publication-centric catalog without exposing a full database-style editor. It covers four entry paths: issue for an existing magazine, issue for a new magazine, edition for an existing book, and edition for a new book.
+The Add Publication flow lets a user add a magazine issue or book edition from the publication-centric catalog without exposing a full database-style editor. It supports either selecting an existing publication identity or typing a new identity for the new issue or edition.
 
 ## UI Components
 
 - `PublicationCatalogView` exposes the Add publication action through an optional navigation callback.
 - `AddPublicationView` renders the guided form as a dedicated page.
-- The form starts with a `ToggleButtonGroup` for Magazine issue versus Book edition, followed by a radio-group choice for existing versus new title.
-- Existing title selection uses MUI `Autocomplete`.
-- New title paths collect required title/name and serial number fields.
+- The form starts with a `ToggleButtonGroup` for Magazine issue versus Book edition.
+- Publication identity uses one free-entry MUI `Autocomplete` that can select an existing magazine/book identity or accept a new typed identity.
+- Existing identity selection submits the selected publication index id and displays its serial number as read-only.
+- New identity entry submits nested publication index data and requires an editable serial number.
 - Magazine issue details collect volume, issue, required issue name, publication date, and optional cover image.
 - Book edition details collect edition, publication date, and optional cover image.
 
@@ -20,7 +21,7 @@ The app routes `/publications/add` to `AddPublicationView`. Cancel and Back to p
 
 ## State Management
 
-Form state is local to `AddPublicationView`. Validation runs after submit is attempted and is derived from the current publication type and source mode. No global state or URL-backed draft state is introduced.
+Form state is local to the shared publication form. Validation runs after submit is attempted and is derived from the current publication type and whether the identity is selected from the lookup or typed as new. No global state or URL-backed draft state is introduced.
 
 ## GraphQL Integration
 
@@ -30,11 +31,11 @@ The form uses real GraphQL operations colocated with the view:
 - `AddMagazineIssue` calls `addMagazineIssue(magInput: ...)` for magazine issue saves.
 - `AddBookEdition` calls `addBookEdition(bookInput: ...)` for book edition saves.
 
-Existing publication paths submit `index: { id }`. New publication paths submit nested `index.data` with name, type, and serial. Cover image files are passed through the generated mutation input so `apollo-upload-client` can use GraphQL multipart upload handling.
+Existing identity selections submit `index: { id }`. Typed new identities submit nested `index.data` with name, type, and serial. Add publication saves omit `pubId`. Cover image files are passed through the generated mutation input so `apollo-upload-client` can use GraphQL multipart upload handling.
 
 ## MUI Patterns
 
-The form uses MUI `ToggleButtonGroup` for the first required type choice, `RadioGroup` for existing/new source mode, `Autocomplete` for existing publication indices, and `TextField` controls for typed metadata. The layout uses responsive CSS grid inside a single outlined `Paper` form.
+The form uses MUI `ToggleButtonGroup` for the first required type choice, free-entry `Autocomplete` for existing or new publication identities, and `TextField` controls for serial and typed metadata. The layout uses responsive CSS grid inside a single outlined `Paper` form.
 
 ## Accessibility And Responsive Design
 

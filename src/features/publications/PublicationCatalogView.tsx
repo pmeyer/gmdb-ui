@@ -34,6 +34,7 @@ interface PublicationCatalogStateProps {
 
 interface PublicationCatalogViewProps {
   onAddPublication?: () => void;
+  onPublicationEditSelected?: (publicationId: string) => void;
   onPublicationSelected?: (publicationId: string) => void;
 }
 
@@ -263,6 +264,7 @@ function PublicationLoadingGrid() {
 
 export function PublicationCatalogView({
   onAddPublication,
+  onPublicationEditSelected,
   onPublicationSelected,
 }: PublicationCatalogViewProps) {
   const [appliedSearchName, setAppliedSearchName] = useState("");
@@ -331,6 +333,13 @@ export function PublicationCatalogView({
       onPublicationSelected?.(String(publicationId));
     },
     [onPublicationSelected],
+  );
+
+  const handlePublicationEditSelected = useCallback(
+    (publicationId: unknown) => {
+      onPublicationEditSelected?.(String(publicationId));
+    },
+    [onPublicationEditSelected],
   );
 
   return (
@@ -423,6 +432,13 @@ export function PublicationCatalogView({
                   onPublicationSelected !== undefined
                     ? () => {
                         handlePublicationSelected(publication.id);
+                      }
+                    : undefined
+                }
+                onEdit={
+                  onPublicationEditSelected !== undefined
+                    ? () => {
+                        handlePublicationEditSelected(publication.id);
                       }
                     : undefined
                 }

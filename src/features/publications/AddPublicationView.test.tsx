@@ -1,6 +1,6 @@
 import { graphql, HttpResponse } from "msw";
 import { describe, expect, it, vi } from "vitest";
-import { screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { renderWithProviders } from "../../test/renderWithProviders";
@@ -30,6 +30,7 @@ interface AddMagazineIssueVariables {
       issueName: string;
       cover?: unknown;
     };
+    pubId?: string;
     transcriptions?: unknown[];
   };
 }
@@ -96,7 +97,7 @@ function addMagazineIssueHandler(
 async function chooseExistingMagazine() {
   const user = userEvent.setup();
 
-  await user.click(await screen.findByRole("combobox", { name: "Existing magazine" }));
+  await user.click(await screen.findByRole("combobox", { name: "Magazine name" }));
   await user.click(
     await screen.findByRole("option", { name: "Guitar World (10456295)" }),
   );
@@ -123,7 +124,10 @@ describe("AddPublicationView", () => {
       "true",
     );
     expect(
-      await screen.findByRole("combobox", { name: "Existing magazine" }),
+      await screen.findByRole("combobox", { name: "Magazine name" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: "Serial number (ISSN)" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Volume" })).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Issue" })).toBeInTheDocument();
@@ -143,9 +147,8 @@ describe("AddPublicationView", () => {
     renderWithProviders(<AddPublicationView onCancel={vi.fn()} onSaved={vi.fn()} />);
 
     await user.click(screen.getByRole("button", { name: "Book edition" }));
-    await user.click(screen.getByRole("radio", { name: "New book" }));
 
-    expect(screen.getByRole("textbox", { name: "Book title" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Book title" })).toBeInTheDocument();
     expect(
       screen.getByRole("textbox", { name: "Serial number (ISBN)" }),
     ).toBeInTheDocument();
@@ -156,29 +159,12 @@ describe("AddPublicationView", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("validates required existing magazine and issue fields", async () => {
+  it("validates required magazine identity and issue fields", async () => {
     const user = userEvent.setup();
     server.use(publicationIndexLookupHandler());
 
     renderWithProviders(<AddPublicationView onCancel={vi.fn()} onSaved={vi.fn()} />);
 
-    await user.click(screen.getByRole("button", { name: "Save publication" }));
-
-    expect(
-      await screen.findByText("Choose the magazine this issue belongs to."),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Issue name is required for magazine issues."),
-    ).toBeInTheDocument();
-  });
-
-  it("validates required new publication identity fields", async () => {
-    const user = userEvent.setup();
-    server.use(publicationIndexLookupHandler());
-
-    renderWithProviders(<AddPublicationView onCancel={vi.fn()} onSaved={vi.fn()} />);
-
-    await user.click(screen.getByRole("radio", { name: "New magazine" }));
     await user.click(screen.getByRole("button", { name: "Save publication" }));
 
     expect(await screen.findByText("Magazine name is required.")).toBeInTheDocument();
@@ -186,6 +172,20 @@ describe("AddPublicationView", () => {
     expect(
       screen.getByText("Issue name is required for magazine issues."),
     ).toBeInTheDocument();
+  });
+
+  it("requires serial number for a typed new publication identity", async () => {
+    const user = userEvent.setup();
+    server.use(publicationIndexLookupHandler());
+
+    renderWithProviders(<AddPublicationView onCancel={vi.fn()} onSaved={vi.fn()} />);
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Magazine name" }), {
+      target: { value: "New Guitar Magazine" },
+    });
+    await user.click(screen.getByRole("button", { name: "Save publication" }));
+
+    expect(await screen.findByText("ISSN is required.")).toBeInTheDocument();
   });
 
   it("submits a magazine issue through the GraphQL mutation", async () => {
@@ -201,10 +201,19 @@ describe("AddPublicationView", () => {
     renderWithProviders(<AddPublicationView onCancel={vi.fn()} onSaved={onSaved} />);
 
     const user = await chooseExistingMagazine();
-    await user.type(screen.getByRole("textbox", { name: "Volume" }), "50");
-    await user.type(screen.getByRole("textbox", { name: "Issue" }), "6");
-    await user.type(screen.getByRole("textbox", { name: "Issue name" }), "Summer Songs");
-    await user.type(screen.getByLabelText("Publication date"), "2026-06-01");
+    expect(screen.getByRole("textbox", { name: "Serial number (ISSN)" })).toBeDisabled();
+    fireEvent.change(screen.getByRole("textbox", { name: "Volume" }), {
+      target: { value: "50" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "Issue" }), {
+      target: { value: "6" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "Issue name" }), {
+      target: { value: "Summer Songs" },
+    });
+    fireEvent.change(screen.getByLabelText("Publication date"), {
+      target: { value: "2026-06-01" },
+    });
     await user.click(screen.getByRole("button", { name: "Save publication" }));
 
     await waitFor(() => {
@@ -224,5 +233,47 @@ describe("AddPublicationView", () => {
         transcriptions: [],
       },
     });
+    expect(mutationRequests[0].magInput.pubId).toBeUndefined();
+  });
+
+  it("submits a typed new magazine identity through the GraphQL mutation", async () => {
+    const user = userEvent.setup();
+    const onSaved = vi.fn();
+    const mutationRequests: AddMagazineIssueVariables[] = [];
+    server.use(
+      publicationIndexLookupHandler(),
+      addMagazineIssueHandler((variables) => {
+        mutationRequests.push(variables);
+      }),
+    );
+
+    renderWithProviders(<AddPublicationView onCancel={vi.fn()} onSaved={onSaved} />);
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Magazine name" }), {
+      target: { value: "New Guitar Magazine" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "Serial number (ISSN)" }), {
+      target: { value: "1234-5678" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "Issue name" }), {
+      target: { value: "Launch Issue" },
+    });
+    await user.click(screen.getByRole("button", { name: "Save publication" }));
+
+    await waitFor(() => {
+      expect(onSaved).toHaveBeenCalledWith("101");
+    });
+    expect(mutationRequests[0]).toMatchObject({
+      magInput: {
+        index: {
+          data: {
+            name: "New Guitar Magazine",
+            serial: "1234-5678",
+            type: "MAG",
+          },
+        },
+      },
+    });
+    expect(mutationRequests[0].magInput.pubId).toBeUndefined();
   });
 });
