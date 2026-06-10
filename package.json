@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "type": "module",
   "description": "Guitar transcription catalog UI",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+ssh://git@github.com/pmeyer/gmdb-ui.git"
