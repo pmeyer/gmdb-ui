@@ -75,6 +75,36 @@ function songCatalogHandler() {
   );
 }
 
+function addSongTranscriptionLookupsHandler() {
+  return graphql.query("AddSongTranscriptionLookups", () =>
+    HttpResponse.json({
+      data: {
+        pubSearch: publicationResults.map((publication) => ({
+          __typename: publication.__typename,
+          id: publication.id,
+          name: publication.name,
+          type: publication.type,
+          pubDate: publication.pubDate,
+          serialNumber: publication.serialNumber,
+          pubIndexId: publication.pubIndexId,
+          details: publication.details,
+        })),
+        songSearch: songResults.map((song) => ({
+          __typename: song.__typename,
+          id: song.id,
+          title: song.title,
+          album: song.album,
+          artists: song.artists,
+          transcriptions: song.transcriptions.map((transcription) => ({
+            __typename: transcription.__typename,
+            transcribers: transcription.transcribers,
+          })),
+        })),
+      },
+    }),
+  );
+}
+
 const publicationResults = [
   {
     __typename: "PubSearchResult",
@@ -264,6 +294,30 @@ describe("App", () => {
       "aria-pressed",
       "true",
     );
+  });
+
+  it("opens the add song transcription flow from the song catalog", async () => {
+    const user = userEvent.setup();
+    server.use(
+      emptyPublicationCatalogHandler(),
+      songCatalogHandler(),
+      addSongTranscriptionLookupsHandler(),
+    );
+
+    renderWithProviders(<App />);
+
+    await user.click(screen.getByRole("button", { name: "Songs" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Add song transcription" }),
+    );
+
+    expect(window.location.pathname).toBe("/songs/transcriptions/add");
+    expect(
+      screen.getByRole("heading", { name: "Add song transcription" }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole("combobox", { name: "Existing publication" }),
+    ).toBeInTheDocument();
   });
 
   it("navigates from a publication card to publication details", async () => {

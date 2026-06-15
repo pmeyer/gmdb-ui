@@ -48,6 +48,7 @@ interface SongCatalogToolbarProps {
 }
 
 interface SongCatalogViewProps {
+  onAddSongTranscription?: () => void;
   onTranscriptionSelected?: (
     publicationId: string,
     transcriptionId: string,
@@ -310,7 +311,10 @@ function SongCatalogToolbar({
   );
 }
 
-export function SongCatalogView({ onTranscriptionSelected }: SongCatalogViewProps) {
+export function SongCatalogView({
+  onAddSongTranscription,
+  onTranscriptionSelected,
+}: SongCatalogViewProps) {
   const [appliedFilters, setAppliedFilters] =
     useState<SongFilters>(emptySongFilters);
   const [draftFilters, setDraftFilters] = useState<SongFilters>(emptySongFilters);
@@ -364,8 +368,13 @@ export function SongCatalogView({ onTranscriptionSelected }: SongCatalogViewProp
   }, []);
 
   const handleAddSongTranscription = useCallback(() => {
+    if (onAddSongTranscription !== undefined) {
+      onAddSongTranscription();
+      return;
+    }
+
     setNotice("Add song transcription is not available yet.");
-  }, []);
+  }, [onAddSongTranscription]);
 
   const handleViewTranscription = useCallback(
     (transcription: SongTranscriptionCatalogItem) => {

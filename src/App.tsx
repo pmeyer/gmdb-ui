@@ -14,6 +14,7 @@ import { AddPublicationView } from "./features/publications/AddPublicationView";
 import { EditPublicationView } from "./features/publications/EditPublicationView";
 import { PublicationCatalogView } from "./features/publications/PublicationCatalogView";
 import { PublicationDetailView } from "./features/publications/PublicationDetailView";
+import { AddSongTranscriptionView } from "./features/songs/AddSongTranscriptionView";
 import { SongCatalogView } from "./features/songs/SongCatalogView";
 import { TranscriptionDetailView } from "./features/transcriptions/TranscriptionDetailView";
 
@@ -25,6 +26,9 @@ type AppRoute =
     }
   | {
       name: "addPublication";
+    }
+  | {
+      name: "addSongTranscription";
     }
   | {
       name: "publicationDetail";
@@ -50,6 +54,12 @@ function readCurrentRoute(): AppRoute {
   if (/^\/publications\/add\/?$/.test(window.location.pathname)) {
     return {
       name: "addPublication",
+    };
+  }
+
+  if (/^\/songs\/transcriptions\/add\/?$/.test(window.location.pathname)) {
+    return {
+      name: "addSongTranscription",
     };
   }
 
@@ -202,6 +212,14 @@ function App() {
     });
   }, []);
 
+  const handleAddSongTranscription = useCallback(() => {
+    setSelectedView("songs");
+    pushRoute("/songs/transcriptions/add");
+    setRoute({
+      name: "addSongTranscription",
+    });
+  }, []);
+
   const handleEditPublication = useCallback((publicationId: string) => {
     const nextPath = `/publications/${encodeURIComponent(publicationId)}/edit`;
 
@@ -324,6 +342,13 @@ function App() {
                 }}
                 onSaved={handlePublicationSelected}
               />
+            ) : route.name === "addSongTranscription" ? (
+              <AddSongTranscriptionView
+                onCancel={() => {
+                  navigateToCatalog("songs");
+                }}
+                onSaved={handlePublicationSelected}
+              />
             ) : route.name === "editPublication" ? (
               <EditPublicationView
                 publicationId={route.publicationId}
@@ -366,6 +391,7 @@ function App() {
               />
             ) : (
               <SongCatalogView
+                onAddSongTranscription={handleAddSongTranscription}
                 onTranscriptionSelected={(publicationId, transcriptionId) => {
                   handleTranscriptionSelected(
                     publicationId,

@@ -1,0 +1,79 @@
+query AddSongTranscriptionLookups(
+  $publicationCriteria: PubSearchCriteria! = {}
+  $songCriteria: SongSearchCriteria! = {}
+) {
+  pubSearch(criteria: $publicationCriteria) {
+    id
+    name
+    type
+    pubDate
+    serialNumber
+    pubIndexId
+    details {
+      __typename
+      cover
+      ... on MagDetails {
+        volume
+        issue
+        issueName
+      }
+      ... on BookDetails {
+        edition
+      }
+    }
+  }
+  songSearch(criteria: $songCriteria) {
+    id
+    title
+    album {
+      id
+      title
+      trackNumber
+      releaseDate
+      albumArtUrl
+      artist {
+        id
+        name
+        type
+      }
+    }
+    artists {
+      id
+      name
+      type
+      roles
+    }
+    transcriptions {
+      transcribers {
+        id
+        name
+      }
+    }
+  }
+}
+
+mutation AddSongTranscriptionMagazine($magInput: MagazineInput!) {
+  addMagazineIssue(magInput: $magInput) {
+    id
+    transcriptions {
+      id
+      song {
+        id
+        title
+      }
+    }
+  }
+}
+
+mutation AddSongTranscriptionBook($bookInput: BookInput!) {
+  addBookEdition(bookInput: $bookInput) {
+    id
+    transcriptions {
+      id
+      song {
+        id
+        title
+      }
+    }
+  }
+}
