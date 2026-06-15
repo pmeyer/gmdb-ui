@@ -22,7 +22,44 @@ const theme = createTheme({
     button: {
       textTransform: 'none'
     }
-  }
+  },
+  components: {
+    MuiButton: {
+      defaultProps: {
+        size: 'small'
+      }
+    },
+    MuiTextField: {
+      defaultProps: {
+        size: 'small'
+      }
+    },
+    MuiFormControl: {
+      defaultProps: {
+        size: 'small'
+      }
+    },
+    MuiInputLabel: {
+      defaultProps: {
+        size: 'small'
+      }
+    },
+    MuiSelect: {
+      defaultProps: {
+        size: 'small'
+      }
+    },
+    MuiOutlinedInput: {
+      defaultProps: {
+        size:  'small'
+      }
+    },
+    MuiFilledInput: {
+      defaultProps: {
+        size: 'small'
+      }
+    },
+  },
 });
 
 export default theme;
