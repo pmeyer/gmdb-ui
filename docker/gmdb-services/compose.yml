@@ -28,8 +28,8 @@ services:
       start_period: 10s
 
   liquibase-bootstrap:
-    image: ghcr.io/pmeyer/gmdb-liquibase:${GMDB_LIQUIBASE_VERSION:-1.3.0}
-    container_name: gmdb-liquibase-bootstrap-${GMDB_LIQUIBASE_VERSION:-1.3.0}
+    image: ghcr.io/pmeyer/gmdb-liquibase:${GMDB_LIQUIBASE_VERSION:-1.3.2}
+    container_name: gmdb-liquibase-bootstrap-${GMDB_LIQUIBASE_VERSION:-1.3.2}
     depends_on:
       postgres:
         condition: service_healthy
@@ -46,8 +46,8 @@ services:
     restart: "no"
 
   liquibase-migrate:
-    image: ghcr.io/pmeyer/gmdb-liquibase:${GMDB_LIQUIBASE_VERSION:-1.3.0}
-    container_name: gmdb-liquibase-migrate-${GMDB_LIQUIBASE_VERSION:-1.3.0}
+    image: ghcr.io/pmeyer/gmdb-liquibase:${GMDB_LIQUIBASE_VERSION:-1.3.2}
+    container_name: gmdb-liquibase-migrate-${GMDB_LIQUIBASE_VERSION:-1.3.2}
     depends_on:
       liquibase-bootstrap:
         condition: service_completed_successfully
@@ -61,8 +61,8 @@ services:
     restart: "no"
 
   api:
-    image: ghcr.io/pmeyer/gmdb-api:${GMDB_API_VERSION:-1.4.0}
-    container_name: gmdb-api-${GMDB_API_VERSION:-1.4.0}
+    image: ghcr.io/pmeyer/gmdb-api:${GMDB_API_VERSION:-1.6.0}
+    container_name: gmdb-api-${GMDB_API_VERSION:-1.6.0}
     depends_on:
       liquibase-migrate:
         condition: service_completed_successfully
