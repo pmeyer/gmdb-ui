@@ -4,6 +4,7 @@ import type { CatalogCardAction } from "./types";
 
 interface MediaArtworkProps {
   imageUrl?: string;
+  fallbackImageUrl?: string;
   altText: string;
   fallbackLabel: string;
   aspectRatio: string;
@@ -31,18 +32,26 @@ function renderAction(action: CatalogCardAction) {
 
 export function MediaArtwork({
   imageUrl,
+  fallbackImageUrl,
   altText,
   fallbackLabel,
   aspectRatio,
 }: MediaArtworkProps) {
-  if (imageUrl !== undefined && imageUrl.trim().length > 0) {
+  const resolvedImageUrl =
+    imageUrl !== undefined && imageUrl.trim().length > 0
+      ? imageUrl
+      : fallbackImageUrl;
+
+  if (resolvedImageUrl !== undefined) {
     return (
       <Box
         component="img"
         alt={altText}
-        src={imageUrl}
+        src={resolvedImageUrl}
         sx={{
           aspectRatio,
+          borderBottom: 1,
+          borderColor: "divider",
           bgcolor: "grey.100",
           display: "block",
           objectFit: "cover",

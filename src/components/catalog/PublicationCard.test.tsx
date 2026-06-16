@@ -57,8 +57,7 @@ describe("PublicationCard", () => {
 
     expect(
       screen.getByRole("img", { name: "Cover art for Collected Rock Tabs" }),
-    ).toBeInTheDocument();
-    expect(screen.getByText("No cover art")).toBeInTheDocument();
+    ).toHaveAttribute("src", expect.stringContaining("cover-img-placeholder.png"));
     expect(screen.getByText("Book edition")).toBeInTheDocument();
     expect(screen.getByText("Transcriptions not cataloged yet")).toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();

@@ -12,6 +12,7 @@ import {
   Typography,
 } from "@mui/material";
 
+import coverImagePlaceholderUrl from "../../assets/cover-img-placeholder.png";
 import { SongTranscriptionCard } from "../../components/catalog";
 import { MediaArtwork } from "../../components/catalog/CatalogCardPrimitives";
 import { PublicationDetailCatalogDocument } from "./PublicationDetailView.generated";
@@ -243,6 +244,7 @@ export function PublicationDetailView({
             >
               <MediaArtwork
                 imageUrl={detail.coverImageUrl}
+                fallbackImageUrl={coverImagePlaceholderUrl}
                 altText={`Cover art for ${detail.title}`}
                 fallbackLabel="No cover art"
                 aspectRatio="3 / 4"

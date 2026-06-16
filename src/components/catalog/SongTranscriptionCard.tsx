@@ -8,6 +8,7 @@ import {
   Typography,
 } from "@mui/material";
 
+import albumArtPlaceholderUrl from "../../assets/album-art-placeholder.png";
 import { CatalogCardActions, MediaArtwork } from "./CatalogCardPrimitives";
 import type { CatalogCardAction, SongTranscriptionCardProps } from "./types";
 
@@ -110,6 +111,7 @@ export function SongTranscriptionCard(song: SongTranscriptionCardProps) {
       <Box sx={{ order: { xs: 2, sm: 0 } }}>
         <MediaArtwork
           imageUrl={song.albumArtUrl}
+          fallbackImageUrl={albumArtPlaceholderUrl}
           altText={`Album art for ${song.albumTitle ?? song.title}`}
           fallbackLabel="No album art"
           aspectRatio="1 / 1"

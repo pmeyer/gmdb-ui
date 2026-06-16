@@ -197,6 +197,9 @@ describe("PublicationDetailView", () => {
       await screen.findByRole("heading", { name: "Collected Rock Tabs" }),
     ).toBeInTheDocument();
     expect(
+      screen.getByRole("img", { name: "Cover art for Collected Rock Tabs" }),
+    ).toHaveAttribute("src", expect.stringContaining("cover-img-placeholder.png"));
+    expect(
       screen.getByRole("heading", { name: "No song transcriptions listed" }),
     ).toBeInTheDocument();
   });
