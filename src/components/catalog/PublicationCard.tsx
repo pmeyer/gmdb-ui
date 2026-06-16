@@ -8,6 +8,7 @@ import {
   Typography,
 } from "@mui/material";
 
+import coverImagePlaceholderUrl from "../../assets/cover-img-placeholder.png";
 import { CatalogCardActions, MediaArtwork } from "./CatalogCardPrimitives";
 import type { CatalogCardAction, PublicationCardProps } from "./types";
 
@@ -113,6 +114,7 @@ export function PublicationCard(publication: PublicationCardProps) {
     >
       <MediaArtwork
         imageUrl={publication.coverImageUrl}
+        fallbackImageUrl={coverImagePlaceholderUrl}
         altText={`Cover art for ${publication.title}`}
         fallbackLabel="No cover art"
         aspectRatio="3 / 4"

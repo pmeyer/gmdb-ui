@@ -218,6 +218,9 @@ describe("SongCatalogView", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Transcribed by Jane Smith, Pat Lee")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Untitled Draft" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: "Album art for Untitled Draft" }),
+    ).toHaveAttribute("src", expect.stringContaining("album-art-placeholder.png"));
     expect(screen.getByText("Artist unknown")).toBeInTheDocument();
     expect(screen.getByText("Album not listed")).toBeInTheDocument();
     expect(screen.getByText("Source publication not assigned")).toBeInTheDocument();

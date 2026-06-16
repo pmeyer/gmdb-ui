@@ -132,6 +132,44 @@ const publicationResults = [
       },
     ],
   },
+  {
+    __typename: "PubSearchResult",
+    id: "2",
+    name: "Collected Rock Tabs",
+    type: "BOOK",
+    pubDate: null,
+    serialNumber: "ISBN 978-1-2345-6789-0",
+    pubIndexId: "12",
+    details: {
+      __typename: "BookDetails",
+      cover: null,
+      edition: "First edition",
+    },
+    transcriptions: [
+      {
+        __typename: "PubTranscription",
+        id: "201",
+        url: "/resources/transcriptions/201/file",
+        pageNumber: 14,
+        song: {
+          __typename: "Song",
+          id: "301",
+          title: "Missing Artwork Blues",
+          album: {
+            __typename: "SongAlbum",
+            id: "401",
+            title: "No Cover Sessions",
+            trackNumber: null,
+            releaseDate: null,
+            albumArtUrl: null,
+            artist: null,
+          },
+          artists: [],
+        },
+        transcribers: [],
+      },
+    ],
+  },
 ];
 
 describe("TranscriptionDetailView", () => {
@@ -225,6 +263,31 @@ describe("TranscriptionDetailView", () => {
         "This transcription has catalog metadata, but no PDF file reference is available yet.",
       ),
     ).toBeInTheDocument();
+  });
+
+  it("uses catalog artwork placeholders when transcription source images are missing", async () => {
+    server.use(transcriptionDetailHandler(publicationResults));
+
+    renderWithProviders(
+      <TranscriptionDetailView
+        publicationId="2"
+        transcriptionId="201"
+        backLabel="Back to publication"
+        onBack={vi.fn()}
+      />,
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "Missing Artwork Blues" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", {
+        name: "Cover art for Collected Rock Tabs, First edition",
+      }),
+    ).toHaveAttribute("src", expect.stringContaining("cover-img-placeholder.png"));
+    expect(
+      screen.getByRole("img", { name: "Album art for No Cover Sessions" }),
+    ).toHaveAttribute("src", expect.stringContaining("album-art-placeholder.png"));
   });
 
   it("shows a not-found state when the routed transcription is absent", async () => {

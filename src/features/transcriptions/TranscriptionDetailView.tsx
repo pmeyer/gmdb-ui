@@ -13,6 +13,8 @@ import {
   Typography,
 } from "@mui/material";
 
+import albumArtPlaceholderUrl from "../../assets/album-art-placeholder.png";
+import coverImagePlaceholderUrl from "../../assets/cover-img-placeholder.png";
 import { MediaArtwork } from "../../components/catalog/CatalogCardPrimitives";
 import { TranscriptionDetailCatalogDocument } from "./TranscriptionDetailView.generated";
 import {
@@ -182,6 +184,7 @@ function AlbumPanel({ detail }: { detail: TranscriptionDetailSummary }) {
       >
         <MediaArtwork
           imageUrl={detail.album.albumArtUrl}
+          fallbackImageUrl={albumArtPlaceholderUrl}
           altText={`Album art for ${detail.album.title}`}
           fallbackLabel="No album art"
           aspectRatio="1 / 1"
@@ -391,6 +394,7 @@ export function TranscriptionDetailView({
             >
               <MediaArtwork
                 imageUrl={detail.sourceCoverUrl}
+                fallbackImageUrl={coverImagePlaceholderUrl}
                 altText={`Cover art for ${detail.sourcePublication}`}
                 fallbackLabel="No publication art"
                 aspectRatio="3 / 4"

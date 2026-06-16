@@ -49,8 +49,7 @@ describe("SongTranscriptionCard", () => {
 
     expect(
       screen.getByRole("img", { name: "Album art for Untitled Draft" }),
-    ).toBeInTheDocument();
-    expect(screen.getByText("No album art")).toBeInTheDocument();
+    ).toHaveAttribute("src", expect.stringContaining("album-art-placeholder.png"));
     expect(screen.getByText("Artist unknown")).toBeInTheDocument();
     expect(screen.getByText("Album not listed")).toBeInTheDocument();
     expect(screen.getByText("Source publication not assigned")).toBeInTheDocument();
