@@ -20,11 +20,11 @@ export function isFormattedSerial(v?: string | FormattedSerialNumber): v is Form
 }
 
 export function isISBN10(isbn: ISBN | ISSN | null): isbn is ISBN13WithISBN10 {
-    return (isbn as ISBN).isIsbn10;
+  return isbn !== null && typeof isbn === 'object' && 'isIsbn10' in isbn && isbn.isIsbn10;
 }
 
 export function isISBN13(isbn: ISBN | ISSN | null): isbn is ISBN13Only {
-    return (isbn as ISBN).isIsbn13;
+  return isbn !== null && typeof isbn === 'object' && 'isIsbn13' in isbn && isbn.isIsbn13;
 }
 
 export function getFormattedSerialNumber(value?: string | null): FormattedSerialNumber {

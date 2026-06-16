@@ -18,7 +18,7 @@ function calcISSNCheckDigit(digits: string) {
 }
 
 export function parseISSN(issn: string): ISSN | null {
-    const match = issn.match(ISSN_REGEX);
+    const match = ISSN_REGEX.exec(issn);
     if (!match?.groups) {
         return null;
     }
