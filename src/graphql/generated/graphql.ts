@@ -89,7 +89,7 @@ export type BookEditionInput = {
   /** Optional book cover image upload. Supplying a file stores or replaces the publication cover resource. */
   cover?: unknown;
   /** Edition name or number. */
-  edition?: string | null | undefined;
+  edition: string;
 };
 
 /**
@@ -100,7 +100,7 @@ export type BookInput = {
   /** Existing or new publication index for the book title. */
   index: PubIndexInput;
   /** Book edition-specific metadata. */
-  info?: BookEditionInput;
+  info: BookEditionInput;
   /** Date associated with this book edition. When omitted, the publication is stored without a publication date. */
   pubDate?: unknown;
   /** Existing publication id to update. Omit to create a new book edition. */
@@ -181,6 +181,8 @@ export type PubSearchCriteria = {
   hasTranscriptions?: boolean | null | undefined;
   /** Publication id to match. */
   id?: unknown;
+  /** Publication index id to match, returning all publications for that title. */
+  pubIndexId?: unknown;
   /** Case-insensitive pattern match against publication index name, magazine issue name, or book edition. */
   searchName?: string | null | undefined;
   /** Return publications of the supplied type. */

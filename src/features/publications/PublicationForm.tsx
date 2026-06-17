@@ -41,6 +41,7 @@ interface PublicationFormProps {
 }
 
 interface ValidationErrors {
+  edition?: string;
   issueName?: string;
   name?: string;
   serialNumber?: string;
@@ -101,6 +102,10 @@ function validateForm(formState: PublicationFormState): ValidationErrors {
 
   if (formState.kind === "MAG" && trimmedValue(formState.issueName) === undefined) {
     errors.issueName = "Issue name is required for magazine issues.";
+  }
+
+  if (formState.kind === "BOOK" && trimmedValue(formState.edition) === undefined) {
+    errors.edition = "Edition is required for book editions.";
   }
 
   return errors;
@@ -489,10 +494,15 @@ export function PublicationForm({
                 </>
               ) : (
                 <TextField
-                  helperText="Optional edition text, such as First edition or Revised edition."
+                  error={validationErrors.edition !== undefined}
+                  helperText={
+                    validationErrors.edition ??
+                    "Required edition text, such as First edition or Revised edition."
+                  }
                   label="Edition"
                   name="edition"
                   onChange={handleTextFieldChange}
+                  required
                   value={formState.edition}
                 />
               )}
