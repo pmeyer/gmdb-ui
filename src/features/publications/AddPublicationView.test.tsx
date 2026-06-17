@@ -35,6 +35,26 @@ interface AddMagazineIssueVariables {
   };
 }
 
+interface AddBookEditionVariables {
+  bookInput: {
+    pubDate?: string;
+    index: {
+      id?: string;
+      data?: {
+        name: string;
+        serial: string;
+        type: string;
+      };
+    };
+    info: {
+      edition: string;
+      cover?: unknown;
+    };
+    pubId?: string;
+    transcriptions?: unknown[];
+  };
+}
+
 function publicationIndexLookupHandler(
   onRequest?: (variables: AddPublicationIndexLookupVariables) => void,
 ) {
@@ -86,6 +106,34 @@ function addMagazineIssueHandler(
             volume: "50",
             issue: "6",
             issueName: "Summer Songs",
+          },
+          transcriptions: [],
+        },
+      },
+    });
+  });
+}
+
+function addBookEditionHandler(
+  onRequest: (variables: AddBookEditionVariables) => void,
+) {
+  return graphql.mutation("AddBookEdition", ({ variables }) => {
+    onRequest(variables as AddBookEditionVariables);
+
+    return HttpResponse.json({
+      data: {
+        addBookEdition: {
+          __typename: "PubSearchResult",
+          id: "202",
+          name: "Collected Rock Tabs",
+          type: "BOOK",
+          pubDate: "1989-01-15",
+          serialNumber: "0898987660",
+          pubIndexId: "12",
+          details: {
+            __typename: "BookDetails",
+            cover: null,
+            edition: "First edition",
           },
           transcriptions: [],
         },
@@ -171,6 +219,22 @@ describe("AddPublicationView", () => {
     expect(screen.getByText("ISSN is required.")).toBeInTheDocument();
     expect(
       screen.getByText("Issue name is required for magazine issues."),
+    ).toBeInTheDocument();
+  });
+
+  it("validates required book identity and edition fields", async () => {
+    const user = userEvent.setup();
+    server.use(publicationIndexLookupHandler());
+
+    renderWithProviders(<AddPublicationView onCancel={vi.fn()} onSaved={vi.fn()} />);
+
+    await user.click(screen.getByRole("button", { name: "Book edition" }));
+    await user.click(screen.getByRole("button", { name: "Save publication" }));
+
+    expect(await screen.findByText("Book title is required.")).toBeInTheDocument();
+    expect(screen.getByText("ISBN is required.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Edition is required for book editions."),
     ).toBeInTheDocument();
   });
 
@@ -275,5 +339,51 @@ describe("AddPublicationView", () => {
       },
     });
     expect(mutationRequests[0].magInput.pubId).toBeUndefined();
+  });
+
+  it("submits a book edition with required edition metadata", async () => {
+    const user = userEvent.setup();
+    const onSaved = vi.fn();
+    const mutationRequests: AddBookEditionVariables[] = [];
+    server.use(
+      publicationIndexLookupHandler(),
+      addBookEditionHandler((variables) => {
+        mutationRequests.push(variables);
+      }),
+    );
+
+    renderWithProviders(<AddPublicationView onCancel={vi.fn()} onSaved={onSaved} />);
+
+    await user.click(screen.getByRole("button", { name: "Book edition" }));
+    await user.click(await screen.findByRole("combobox", { name: "Book title" }));
+    await user.click(
+      await screen.findByRole("option", {
+        name: "Collected Rock Tabs (0898987660)",
+      }),
+    );
+    fireEvent.change(screen.getByRole("textbox", { name: "Edition" }), {
+      target: { value: "First edition" },
+    });
+    fireEvent.change(screen.getByLabelText("Publication date"), {
+      target: { value: "1989-01-15" },
+    });
+    await user.click(screen.getByRole("button", { name: "Save publication" }));
+
+    await waitFor(() => {
+      expect(onSaved).toHaveBeenCalledWith("202");
+    });
+    expect(mutationRequests[0]).toMatchObject({
+      bookInput: {
+        pubDate: "1989-01-15",
+        index: {
+          id: "12",
+        },
+        info: {
+          edition: "First edition",
+        },
+        transcriptions: [],
+      },
+    });
+    expect(mutationRequests[0].bookInput.pubId).toBeUndefined();
   });
 });
