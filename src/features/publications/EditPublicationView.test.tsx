@@ -419,6 +419,7 @@ describe("EditPublicationView", () => {
     await user.click(screen.getByRole("button", { name: "Save changes" }));
 
     expect(await screen.findByText("Magazine name is required.")).toBeInTheDocument();
+    expect(screen.getByText("Serial number is required.")).toBeInTheDocument();
     expect(
       screen.getByText("Issue name is required for magazine issues."),
     ).toBeInTheDocument();

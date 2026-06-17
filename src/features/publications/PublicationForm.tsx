@@ -16,6 +16,8 @@ import {
 } from "@mui/material";
 
 import type { PubIndexCriteria } from "../../graphql/generated/graphql";
+import { PubIndexSerialNumberInput } from "../../components/input/PubIndexSerialNumberInput";
+import type { FormattedSerialNumber } from "../../utils/serialNumberUtils";
 import { AddPublicationIndexLookupDocument } from "./AddPublicationView.generated";
 import {
   initialPublicationFormState,
@@ -93,8 +95,7 @@ function validateForm(formState: PublicationFormState): ValidationErrors {
 
   if (formState.sourceMode === "NEW") {
     if (trimmedValue(formState.serialNumber) === undefined) {
-      errors.serialNumber =
-        formState.kind === "MAG" ? "ISSN is required." : "ISBN is required.";
+      errors.serialNumber = "Serial number is required.";
     }
   }
 
@@ -221,6 +222,13 @@ export function PublicationForm({
     },
     [],
   );
+
+  const handleSerialNumberChange = useCallback((nextValue: FormattedSerialNumber) => {
+    setFormState((current) => ({
+      ...current,
+      serialNumber: nextValue.formattedValue,
+    }));
+  }, []);
 
   const handleCoverImageChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -399,7 +407,7 @@ export function PublicationForm({
                 )}
               />
 
-              <TextField
+              <PubIndexSerialNumberInput
                 disabled={isExistingIdentity}
                 error={validationErrors.serialNumber !== undefined}
                 helperText={
@@ -411,8 +419,7 @@ export function PublicationForm({
                       : "Required for a new book identity.")
                 }
                 label={serialNumberLabel(formState.kind)}
-                name="serialNumber"
-                onChange={handleTextFieldChange}
+                onChange={handleSerialNumberChange}
                 required={!isExistingIdentity}
                 value={formState.serialNumber}
               />
