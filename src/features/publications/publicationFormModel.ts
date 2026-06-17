@@ -104,7 +104,7 @@ export function buildBookInput(
     index: buildIndexInput(formState),
     info: {
       cover: formState.coverImage ?? undefined,
-      edition: trimmedValue(formState.edition),
+      edition: trimmedValue(formState.edition) ?? "",
     },
     pubDate: trimmedValue(formState.publicationDate),
     ...(options.publicationId !== undefined ? { pubId: options.publicationId } : {}),
