@@ -10,7 +10,7 @@ type PubIndexSerialNumberInputProps = {
     readOnly?: boolean
     value: string | FormattedSerialNumber
     onChange?: PubIndexSerialNumberChangeEventHandler
-} & Pick<TextFieldProps, 'sx' | 'disabled' | 'size' | 'variant' | 'fullWidth' | 'label'>;
+} & Pick<TextFieldProps, 'sx' | 'disabled' | 'size' | 'variant' | 'fullWidth' | 'label' | 'required' | 'error' | 'helperText'>;
 
 export function PubIndexSerialNumberInput({value, onChange, readOnly, label, ...textFieldProps}:PubIndexSerialNumberInputProps) {
     const displayValue: FormattedSerialNumber = useMemo(() => {

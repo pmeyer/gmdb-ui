@@ -96,6 +96,36 @@ describe("PubIndexSerialNumberInput", () => {
     expect(input.closest(".MuiFormControl-root")).toHaveClass("MuiFormControl-fullWidth");
   });
 
+  it("passes required state through", () => {
+    render(
+      <PubIndexSerialNumberInput
+        value=""
+        label="Publication identifier"
+        required
+      />,
+    );
+
+    expect(screen.getByRole("textbox", { name: /Publication identifier/ })).toBeRequired();
+  });
+
+  it("passes error state and helper text through", () => {
+    render(
+      <PubIndexSerialNumberInput
+        value=""
+        label="Publication identifier"
+        error
+        helperText="Serial number is required."
+      />,
+    );
+
+    const input = screen.getByRole("textbox", { name: "Publication identifier" });
+    const helperText = screen.getByText("Serial number is required.");
+
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(helperText).toBeInTheDocument();
+    expect(input).toHaveAccessibleDescription("Serial number is required.");
+  });
+
   it("supports read-only input", async () => {
     const user = userEvent.setup();
     const handleChange = vi.fn();
