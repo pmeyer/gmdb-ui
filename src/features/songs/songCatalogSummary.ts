@@ -14,15 +14,15 @@ export interface SongTranscriptionCatalogItem {
   cardProps: SongTranscriptionCardProps;
 }
 
-function optionalText(value: unknown) {
-  if (typeof value !== "string" || value.trim().length === 0) {
+function optionalText(value: string | null | undefined) {
+  if (value === null || value === undefined || value.trim().length === 0) {
     return undefined;
   }
 
   return value;
 }
 
-function formatDate(value: unknown) {
+function formatDate(value: string | null | undefined) {
   const dateValue = optionalText(value);
 
   if (dateValue === undefined) {
@@ -100,13 +100,7 @@ function publicationId(transcription: SongTranscription) {
     return undefined;
   }
 
-  const { id } = transcription.pub;
-
-  if (typeof id === "string" || typeof id === "number") {
-    return id.toString();
-  }
-
-  return undefined;
+  return transcription.pub.id.toString();
 }
 
 function mapSongTranscription(

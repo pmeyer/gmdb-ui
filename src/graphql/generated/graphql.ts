@@ -5,7 +5,7 @@ export type AlbumData = {
   /** Optional primary artist for the album. */
   primaryArtist?: ArtistInput | null | undefined;
   /** Album release date. */
-  releaseDate?: unknown;
+  releaseDate?: string | null | undefined;
   /** Album title. */
   title: string;
 };
@@ -18,7 +18,7 @@ export type AlbumInput = {
   /** Data for a new album or for updating the referenced album. */
   data?: AlbumData | null | undefined;
   /** Existing album id. */
-  id?: unknown;
+  id?: number | null | undefined;
 };
 
 /** Song position on an album and the album to associate with the song. */
@@ -45,7 +45,7 @@ export type ArtistInput = {
   /** Data for a new artist or for updating the referenced artist. */
   data?: ArtistData | null | undefined;
   /** Existing artist id. */
-  id?: unknown;
+  id?: number | null | undefined;
 };
 
 /**
@@ -54,7 +54,7 @@ export type ArtistInput = {
  */
 export type ArtistMatchCriteria = {
   /** Artist id to match. */
-  id: unknown;
+  id: number;
   /**
    * Optional roles to match for this artist. When omitted or empty, the artist id is matched without considering role.
    * When supplied, any one of the supplied roles may match. ALBUM_ARTIST matches the song's album artist; the other roles
@@ -102,9 +102,9 @@ export type BookInput = {
   /** Book edition-specific metadata. */
   info: BookEditionInput;
   /** Date associated with this book edition. When omitted, the publication is stored without a publication date. */
-  pubDate?: unknown;
+  pubDate?: string | null | undefined;
   /** Existing publication id to update. Omit to create a new book edition. */
-  pubId?: unknown;
+  pubId?: number | null | undefined;
   /** Optional transcriptions appearing in the book edition. */
   transcriptions?: Array<TranscriptionInput> | null | undefined;
 };
@@ -119,9 +119,9 @@ export type MagazineInput = {
   /** Magazine issue-specific metadata. */
   info: MagazineIssueInput;
   /** Date associated with this magazine issue. When omitted, the publication is stored without a publication date. */
-  pubDate?: unknown;
+  pubDate?: string | null | undefined;
   /** Existing publication id to update. Omit to create a new magazine issue. */
-  pubId?: unknown;
+  pubId?: number | null | undefined;
   /** Optional transcriptions appearing in the magazine issue. */
   transcriptions?: Array<TranscriptionInput> | null | undefined;
 };
@@ -162,7 +162,7 @@ export type PubIndexInput = {
   /** Data for a new index or for updating the referenced index. */
   data?: PubIndexData | null | undefined;
   /** Existing publication index id. */
-  id?: unknown;
+  id?: number | null | undefined;
 };
 
 /**
@@ -171,18 +171,18 @@ export type PubIndexInput = {
  */
 export type PubSearchCriteria = {
   /** Inclusive upper bound for publication date. */
-  dateEnd?: unknown;
+  dateEnd?: string | null | undefined;
   /** Inclusive lower bound for publication date. */
-  dateStart?: unknown;
+  dateStart?: string | null | undefined;
   /**
    * When true, return only publications with at least one transcription. When false or omitted, no transcription filter
    * is applied.
    */
   hasTranscriptions?: boolean | null | undefined;
   /** Publication id to match. */
-  id?: unknown;
+  id?: number | null | undefined;
   /** Publication index id to match, returning all publications for that title. */
-  pubIndexId?: unknown;
+  pubIndexId?: number | null | undefined;
   /** Case-insensitive pattern match against publication index name, magazine issue name, or book edition. */
   searchName?: string | null | undefined;
   /** Return publications of the supplied type. */
@@ -201,7 +201,7 @@ export type SongArtistInput = {
   /** Data for a new artist or for updating the referenced artist. */
   data?: ArtistData | null | undefined;
   /** Existing artist id. */
-  id?: unknown;
+  id?: number | null | undefined;
   /** Roles this artist has on the song. */
   roles: Array<SongArtistRole>;
 };
@@ -233,7 +233,7 @@ export type SongInput = {
   /** Data for a new song or for updating the referenced song. */
   data?: SongData | null | undefined;
   /** Existing song id. */
-  id?: unknown;
+  id?: number | null | undefined;
 };
 
 /**
@@ -244,7 +244,7 @@ export type SongSearchCriteria = {
   /** Case-insensitive pattern match against the title of the album on which a song appears. */
   albumSearch?: string | null | undefined;
   /** Return songs appearing on any of the supplied album ids. */
-  albums?: Array<unknown> | null | undefined;
+  albums?: Array<number> | null | undefined;
   /**
    * Case-insensitive pattern match against names of artists associated directly with the song or as the song album's
    * artist.
@@ -258,7 +258,7 @@ export type SongSearchCriteria = {
   /** Case-insensitive pattern match against the publication index name of publications in which a song appears. */
   pubNameSearch?: string | null | undefined;
   /** Return songs transcribed in any of the supplied publication ids. */
-  pubs?: Array<unknown> | null | undefined;
+  pubs?: Array<number> | null | undefined;
   /** Case-insensitive pattern match against the song title. */
   titleSearch?: string | null | undefined;
 };
@@ -269,7 +269,7 @@ export type SongSearchCriteria = {
  */
 export type TranscriberInput = {
   /** Existing transcriber id. */
-  id?: unknown;
+  id?: number | null | undefined;
   /** Transcriber name. */
   name?: string | null | undefined;
 };
