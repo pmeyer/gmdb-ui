@@ -4,17 +4,15 @@ import type {
   PubIndexInput,
   PubType,
 } from "../../graphql/generated/graphql";
-import type { AddPublicationIndexLookupQuery } from "./AddPublicationView.generated";
+import type { ExistingPubIndexValue } from "../../components/input/types";
 
 export type PublicationFormKind = PubType;
 export type PublicationSourceMode = "EXISTING" | "NEW";
-export type ExistingPublicationOption =
-  AddPublicationIndexLookupQuery["getPubIndices"][number];
 
 export interface PublicationFormState {
   kind: PublicationFormKind;
   sourceMode: PublicationSourceMode;
-  existingPublication: ExistingPublicationOption | null;
+  existingPublication: ExistingPubIndexValue | null;
   name: string;
   serialNumber: string;
   volume: string;
@@ -65,7 +63,7 @@ function buildIndexInput(
     formState.existingPublication !== null
   ) {
     return {
-      id: formState.existingPublication.id,
+      id: formState.existingPublication.identity.id,
     };
   }
 

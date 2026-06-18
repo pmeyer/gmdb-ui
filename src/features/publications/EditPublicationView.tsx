@@ -16,10 +16,10 @@ import {
 import {
   buildBookInput,
   buildMagazineInput,
-  type ExistingPublicationOption,
   idToString,
   type PublicationFormState,
 } from "./publicationFormModel";
+import type { ExistingPubIndexValue } from "../../components/input/types";
 
 interface EditPublicationViewProps {
   publicationId: string;
@@ -40,12 +40,14 @@ function inputDateValue(value: unknown) {
 function publicationToFormState(
   publication: EditablePublication,
 ): PublicationFormState {
-  const existingPublication: ExistingPublicationOption = {
-    __typename: "PubIndexResult",
-    id: publication.pubIndexId,
+  const existingPublication: ExistingPubIndexValue = {
+    kind: "existing",
     name: publication.name,
-    serialNumber: publication.serialNumber,
-    type: publication.type,
+    identity: {
+      id: Number(publication.pubIndexId),
+      serialNumber: publication.serialNumber,
+      type: publication.type,
+    },
   };
   const baseState = {
     coverImage: null,

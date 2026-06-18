@@ -1,9 +1,7 @@
 import type { ChangeEvent, MouseEvent, SyntheticEvent } from "react";
 import { useCallback, useMemo, useState } from "react";
-import { useQuery } from "@apollo/client/react";
 import {
   Alert,
-  Autocomplete,
   Box,
   Button,
   Divider,
@@ -15,14 +13,13 @@ import {
   Typography,
 } from "@mui/material";
 
-import type { PubIndexCriteria } from "../../graphql/generated/graphql";
+import { PubIndexAutocomplete } from "../../components/input/PubIndexAutocomplete";
 import { PubIndexSerialNumberInput } from "../../components/input/PubIndexSerialNumberInput";
+import type { PubIndexAutocompleteValue } from "../../components/input/types";
 import type { FormattedSerialNumber } from "../../utils/serialNumberUtils";
-import { AddPublicationIndexLookupDocument } from "./AddPublicationView.generated";
 import {
   initialPublicationFormState,
   trimmedValue,
-  type ExistingPublicationOption,
   type PublicationFormKind,
   type PublicationFormState,
 } from "./publicationFormModel";
@@ -51,37 +48,12 @@ function publicationKindLabel(kind: PublicationFormKind) {
   return kind === "MAG" ? "Magazine issue" : "Book edition";
 }
 
-function nameLabel(kind: PublicationFormKind) {
-  return kind === "MAG" ? "Magazine name" : "Book title";
-}
-
 function identityLabel(kind: PublicationFormKind) {
   return kind === "MAG" ? "Magazine identity" : "Book identity";
 }
 
 function serialNumberLabel(kind: PublicationFormKind) {
   return kind === "MAG" ? "Serial number (ISSN)" : "Serial number (ISBN)";
-}
-
-function optionLabel(option: ExistingPublicationOption) {
-  return `${option.name} (${option.serialNumber})`;
-}
-
-function identityOptionLabel(option: ExistingPublicationOption | string) {
-  return typeof option === "string" ? option : optionLabel(option);
-}
-
-function isExistingPublicationOption(
-  value: ExistingPublicationOption | string | null,
-): value is ExistingPublicationOption {
-  return typeof value === "object" && value !== null;
-}
-
-function sameIdentity(
-  option: ExistingPublicationOption,
-  value: ExistingPublicationOption | string,
-) {
-  return isExistingPublicationOption(value) && String(option.id) === String(value.id);
 }
 
 function validateForm(formState: PublicationFormState): ValidationErrors {
@@ -130,19 +102,6 @@ export function PublicationForm({
   const [formState, setFormState] = useState<PublicationFormState>(initialState);
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
 
-  const criteria = useMemo<PubIndexCriteria>(
-    () => ({
-      type: formState.kind,
-    }),
-    [formState.kind],
-  );
-
-  const { data, error, loading } = useQuery(AddPublicationIndexLookupDocument, {
-    variables: {
-      criteria,
-    },
-  });
-
   const validationErrors = useMemo(
     () => (hasAttemptedSubmit ? validateForm(formState) : {}),
     [formState, hasAttemptedSubmit],
@@ -171,47 +130,34 @@ export function PublicationForm({
   );
 
   const handleIdentityChange = useCallback(
-    (
-      _event: SyntheticEvent,
-      nextIdentity: ExistingPublicationOption | string | null,
-    ) => {
-      if (isExistingPublicationOption(nextIdentity)) {
+    (nextIdentity: PubIndexAutocompleteValue | null) => {
+      if (nextIdentity?.kind === "existing") {
         setFormState((current) => ({
           ...current,
           existingPublication: nextIdentity,
           name: nextIdentity.name,
-          serialNumber: nextIdentity.serialNumber,
+          serialNumber: nextIdentity.identity.serialNumber,
           sourceMode: "EXISTING",
         }));
         return;
       }
 
-      const nextName = nextIdentity ?? "";
+      setFormState((current) => {
+        const nextName = nextIdentity?.name ?? "";
+        const identityIsUnchanged =
+          nextIdentity?.kind === "new" &&
+          current.sourceMode === "NEW" &&
+          current.existingPublication === null &&
+          current.name === nextName;
 
-      setFormState((current) => ({
-        ...current,
-        existingPublication: null,
-        name: nextName,
-        serialNumber: "",
-        sourceMode: "NEW",
-      }));
-    },
-    [],
-  );
-
-  const handleIdentityInputChange = useCallback(
-    (_event: SyntheticEvent, nextInputValue: string, reason: string) => {
-      if (reason !== "input" && reason !== "clear") {
-        return;
-      }
-
-      setFormState((current) => ({
-        ...current,
-        existingPublication: null,
-        name: nextInputValue,
-        serialNumber: "",
-        sourceMode: "NEW",
-      }));
+        return {
+          ...current,
+          existingPublication: null,
+          name: nextName,
+          serialNumber: identityIsUnchanged ? current.serialNumber : "",
+          sourceMode: "NEW",
+        };
+      });
     },
     [],
   );
@@ -265,21 +211,14 @@ export function PublicationForm({
   const isEditMode = mode === "edit";
   const isExistingIdentity =
     formState.sourceMode === "EXISTING" && formState.existingPublication !== null;
-  const existingOptions = useMemo(() => {
-    const lookupOptions = data?.getPubIndices ?? [];
-    const selected = formState.existingPublication;
-
-    if (
-      selected === null ||
-      lookupOptions.some((option) => String(option.id) === String(selected.id))
-    ) {
-      return lookupOptions;
-    }
-
-    return [selected, ...lookupOptions];
-  }, [data, formState.existingPublication]);
-  const identityValue: ExistingPublicationOption | string | null =
-    formState.existingPublication ?? (formState.name.length > 0 ? formState.name : null);
+  const identityValue = useMemo<PubIndexAutocompleteValue | null>(
+    () =>
+      formState.existingPublication ??
+      (formState.name.length > 0
+        ? { kind: "new", name: formState.name }
+        : null),
+    [formState.existingPublication, formState.name],
+  );
 
   return (
     <Stack component="section" spacing={{ xs: 3, sm: 4 }}>
@@ -387,29 +326,12 @@ export function PublicationForm({
                 maxWidth: 920,
               }}
             >
-              <Autocomplete
-                freeSolo
-                getOptionLabel={identityOptionLabel}
-                inputValue={formState.name}
-                isOptionEqualToValue={sameIdentity}
-                loading={loading}
+              <PubIndexAutocomplete
+                allowAddNew
+                errorText={validationErrors.name}
                 onChange={handleIdentityChange}
-                onInputChange={handleIdentityInputChange}
-                openOnFocus
-                options={existingOptions}
+                pubType={formState.kind}
                 value={identityValue}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    error={validationErrors.name !== undefined}
-                    helperText={
-                      validationErrors.name ??
-                      `Select an existing ${isMagazine ? "magazine" : "book"} identity or type a new title.`
-                    }
-                    label={nameLabel(formState.kind)}
-                    required
-                  />
-                )}
               />
 
               <PubIndexSerialNumberInput
@@ -430,12 +352,6 @@ export function PublicationForm({
               />
             </Box>
 
-            {error !== undefined && (
-              <Alert severity="error" variant="outlined">
-                Publication identity lookup could not be loaded from the catalog
-                API.
-              </Alert>
-            )}
           </Stack>
 
           <Divider />

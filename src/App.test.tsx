@@ -28,13 +28,13 @@ function publicationCatalogHandler() {
 }
 
 function publicationIndexLookupHandler() {
-  return graphql.query("AddPublicationIndexLookup", () =>
+  return graphql.query("GetPubIndices", () =>
     HttpResponse.json({
       data: {
         getPubIndices: [
           {
             __typename: "PubIndexResult",
-            id: "11",
+            id: 11,
             name: "Guitar World",
             type: "MAG",
             serialNumber: "10456295",
@@ -237,7 +237,7 @@ describe("App", () => {
       screen.getByRole("heading", { name: "Add publication" }),
     ).toBeInTheDocument();
     expect(
-      await screen.findByRole("combobox", { name: "Magazine name" }),
+      await screen.findByRole("combobox", { name: "Publication" }),
     ).toBeInTheDocument();
   });
 
@@ -287,7 +287,11 @@ describe("App", () => {
 
   it("navigates from a publication card to publication editing", async () => {
     const user = userEvent.setup();
-    server.use(publicationCatalogHandler(), publicationDetailHandler());
+    server.use(
+      publicationCatalogHandler(),
+      publicationDetailHandler(),
+      publicationIndexLookupHandler(),
+    );
 
     renderWithProviders(<App />);
 
@@ -301,14 +305,18 @@ describe("App", () => {
     expect(
       await screen.findByRole("heading", { name: "Edit publication" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Magazine name" })).toHaveValue(
+    expect(screen.getByRole("combobox", { name: "Publication" })).toHaveValue(
       "Guitar World",
     );
   });
 
   it("navigates from publication details to publication editing", async () => {
     const user = userEvent.setup();
-    server.use(publicationCatalogHandler(), publicationDetailHandler());
+    server.use(
+      publicationCatalogHandler(),
+      publicationDetailHandler(),
+      publicationIndexLookupHandler(),
+    );
 
     renderWithProviders(<App />);
 

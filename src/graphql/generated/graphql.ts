@@ -138,12 +138,6 @@ export type MagazineIssueInput = {
   volume?: string | null | undefined;
 };
 
-/** Criteria for getPubIndices. */
-export type PubIndexCriteria = {
-  /** Return publication index entries of the supplied publication type. */
-  type?: PubType | null | undefined;
-};
-
 /** Publication index data shared by book editions and magazine issues. */
 export type PubIndexData = {
   /** Publication title. */

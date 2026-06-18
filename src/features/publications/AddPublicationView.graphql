@@ -1,12 +1,3 @@
-query AddPublicationIndexLookup($criteria: PubIndexCriteria! = {}) {
-  getPubIndices(criteria: $criteria) {
-    id
-    name
-    type
-    serialNumber
-  }
-}
-
 mutation AddMagazineIssue($magInput: MagazineInput!) {
   addMagazineIssue(magInput: $magInput) {
     id

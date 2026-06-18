@@ -7,17 +7,15 @@ import { renderWithProviders } from "../../test/renderWithProviders";
 import { server } from "../../test/server";
 import { AddPublicationView } from "./AddPublicationView";
 
-interface AddPublicationIndexLookupVariables {
-  criteria?: {
-    type?: string;
-  };
+interface GetPubIndicesVariables {
+  pubType?: string;
 }
 
 interface AddMagazineIssueVariables {
   magInput: {
     pubDate?: string;
     index: {
-      id?: string;
+      id?: number;
       data?: {
         name: string;
         serial: string;
@@ -39,7 +37,7 @@ interface AddBookEditionVariables {
   bookInput: {
     pubDate?: string;
     index: {
-      id?: string;
+      id?: number;
       data?: {
         name: string;
         serial: string;
@@ -56,29 +54,36 @@ interface AddBookEditionVariables {
 }
 
 function publicationIndexLookupHandler(
-  onRequest?: (variables: AddPublicationIndexLookupVariables) => void,
+  onRequest?: (variables: GetPubIndicesVariables) => void,
 ) {
-  return graphql.query("AddPublicationIndexLookup", ({ variables }) => {
-    onRequest?.(variables);
+  return graphql.query("GetPubIndices", ({ variables }) => {
+    const typedVariables = variables as GetPubIndicesVariables;
+    onRequest?.(typedVariables);
+
+    const publicationIndices = [
+      {
+        __typename: "PubIndexResult",
+        id: 11,
+        name: "Guitar World",
+        type: "MAG",
+        serialNumber: "10456295",
+      },
+      {
+        __typename: "PubIndexResult",
+        id: 12,
+        name: "Collected Rock Tabs",
+        type: "BOOK",
+        serialNumber: "0898987660",
+      },
+    ];
 
     return HttpResponse.json({
       data: {
-        getPubIndices: [
-          {
-            __typename: "PubIndexResult",
-            id: "11",
-            name: "Guitar World",
-            type: "MAG",
-            serialNumber: "10456295",
-          },
-          {
-            __typename: "PubIndexResult",
-            id: "12",
-            name: "Collected Rock Tabs",
-            type: "BOOK",
-            serialNumber: "0898987660",
-          },
-        ],
+        getPubIndices: publicationIndices.filter(
+          ({ type }) =>
+            typedVariables.pubType === undefined ||
+            type === typedVariables.pubType,
+        ),
       },
     });
   });
@@ -145,9 +150,21 @@ function addBookEditionHandler(
 async function chooseExistingMagazine() {
   const user = userEvent.setup();
 
-  await user.click(await screen.findByRole("combobox", { name: "Magazine name" }));
+  await user.click(await screen.findByRole("combobox", { name: "Publication" }));
   await user.click(
-    await screen.findByRole("option", { name: "Guitar World (10456295)" }),
+    await screen.findByRole("option", { name: /Guitar World/ }),
+  );
+
+  return user;
+}
+
+async function chooseNewPublication(name: string) {
+  const user = userEvent.setup();
+  const input = await screen.findByRole("combobox", { name: "Publication" });
+
+  await user.type(input, name);
+  await user.click(
+    await screen.findByRole("option", { name: `Add "${name}"` }),
   );
 
   return user;
@@ -155,7 +172,7 @@ async function chooseExistingMagazine() {
 
 describe("AddPublicationView", () => {
   it("renders magazine issue fields by default and looks up existing magazines", async () => {
-    const requests: AddPublicationIndexLookupVariables[] = [];
+    const requests: GetPubIndicesVariables[] = [];
     server.use(
       publicationIndexLookupHandler((variables) => {
         requests.push(variables);
@@ -172,7 +189,7 @@ describe("AddPublicationView", () => {
       "true",
     );
     expect(
-      await screen.findByRole("combobox", { name: "Magazine name" }),
+      await screen.findByRole("combobox", { name: "Publication" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("textbox", { name: "Serial number (ISSN)" }),
@@ -183,7 +200,7 @@ describe("AddPublicationView", () => {
 
     await waitFor(() => {
       expect(
-        requests.some((request) => request.criteria?.type === "MAG"),
+        requests.some((request) => request.pubType === "MAG"),
       ).toBe(true);
     });
   });
@@ -196,7 +213,7 @@ describe("AddPublicationView", () => {
 
     await user.click(screen.getByRole("button", { name: "Book edition" }));
 
-    expect(screen.getByRole("combobox", { name: "Book title" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Publication" })).toBeInTheDocument();
     expect(
       screen.getByRole("textbox", { name: "Serial number (ISBN)" }),
     ).toBeInTheDocument();
@@ -244,9 +261,7 @@ describe("AddPublicationView", () => {
 
     renderWithProviders(<AddPublicationView onCancel={vi.fn()} onSaved={vi.fn()} />);
 
-    fireEvent.change(screen.getByRole("combobox", { name: "Magazine name" }), {
-      target: { value: "New Guitar Magazine" },
-    });
+    await chooseNewPublication("New Guitar Magazine");
     await user.click(screen.getByRole("button", { name: "Save publication" }));
 
     expect(await screen.findByText("Serial number is required.")).toBeInTheDocument();
@@ -287,7 +302,7 @@ describe("AddPublicationView", () => {
       magInput: {
         pubDate: "2026-06-01",
         index: {
-          id: "11",
+          id: 11,
         },
         info: {
           volume: "50",
@@ -313,9 +328,7 @@ describe("AddPublicationView", () => {
 
     renderWithProviders(<AddPublicationView onCancel={vi.fn()} onSaved={onSaved} />);
 
-    fireEvent.change(screen.getByRole("combobox", { name: "Magazine name" }), {
-      target: { value: "New Guitar Magazine" },
-    });
+    await chooseNewPublication("New Guitar Magazine");
     const serialInput = screen.getByRole("textbox", { name: "Serial number (ISSN)" });
     fireEvent.change(serialInput, {
       target: { value: "SELF-PUB-001" },
@@ -356,9 +369,7 @@ describe("AddPublicationView", () => {
 
     renderWithProviders(<AddPublicationView onCancel={vi.fn()} onSaved={onSaved} />);
 
-    fireEvent.change(screen.getByRole("combobox", { name: "Magazine name" }), {
-      target: { value: "New Guitar Magazine" },
-    });
+    await chooseNewPublication("New Guitar Magazine");
     const serialInput = screen.getByRole("textbox", { name: "Serial number (ISSN)" });
     fireEvent.change(serialInput, {
       target: { value: "10456295" },
@@ -400,10 +411,10 @@ describe("AddPublicationView", () => {
     renderWithProviders(<AddPublicationView onCancel={vi.fn()} onSaved={onSaved} />);
 
     await user.click(screen.getByRole("button", { name: "Book edition" }));
-    await user.click(await screen.findByRole("combobox", { name: "Book title" }));
+    await user.click(await screen.findByRole("combobox", { name: "Publication" }));
     await user.click(
       await screen.findByRole("option", {
-        name: "Collected Rock Tabs (0898987660)",
+        name: /Collected Rock Tabs/,
       }),
     );
     fireEvent.change(screen.getByRole("textbox", { name: "Edition" }), {
@@ -421,7 +432,7 @@ describe("AddPublicationView", () => {
       bookInput: {
         pubDate: "1989-01-15",
         index: {
-          id: "12",
+          id: 12,
         },
         info: {
           edition: "First edition",
