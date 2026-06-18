@@ -99,12 +99,12 @@ function addMagazineIssueHandler(
       data: {
         addMagazineIssue: {
           __typename: "PubSearchResult",
-          id: "101",
+          id: 101,
           name: "Guitar World",
           type: "MAG",
           pubDate: "2026-06-01",
           serialNumber: "10456295",
-          pubIndexId: "11",
+          pubIndexId: 11,
           details: {
             __typename: "MagDetails",
             cover: null,
@@ -129,12 +129,12 @@ function addBookEditionHandler(
       data: {
         addBookEdition: {
           __typename: "PubSearchResult",
-          id: "202",
+          id: 202,
           name: "Collected Rock Tabs",
           type: "BOOK",
           pubDate: "1989-01-15",
           serialNumber: "0898987660",
-          pubIndexId: "12",
+          pubIndexId: 12,
           details: {
             __typename: "BookDetails",
             cover: null,

@@ -173,9 +173,11 @@ export function PublicationDetailView({
   onEditPublication,
   onTranscriptionSelected,
 }: PublicationDetailViewProps) {
+  const parsedPublicationId = Number(publicationId);
   const { data, error, loading } = useQuery(PublicationDetailCatalogDocument, {
+    skip: !Number.isInteger(parsedPublicationId),
     variables: {
-      id: publicationId,
+      id: parsedPublicationId,
     },
   });
 

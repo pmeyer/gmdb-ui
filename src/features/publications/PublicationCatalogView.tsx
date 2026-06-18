@@ -329,14 +329,14 @@ export function PublicationCatalogView({
   }, []);
 
   const handlePublicationSelected = useCallback(
-    (publicationId: unknown) => {
+    (publicationId: number) => {
       onPublicationSelected?.(String(publicationId));
     },
     [onPublicationSelected],
   );
 
   const handlePublicationEditSelected = useCallback(
-    (publicationId: unknown) => {
+    (publicationId: number) => {
       onPublicationEditSelected?.(String(publicationId));
     },
     [onPublicationEditSelected],

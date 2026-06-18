@@ -87,12 +87,12 @@ async function searchPublications(searchText: string) {
 const publicationCatalogResults = [
   {
     __typename: "PubSearchResult",
-    id: "1",
+    id: 1,
     name: "Guitar World",
     type: "MAG",
     pubDate: "1992-06-01",
     serialNumber: "ISSN 1045-6295",
-    pubIndexId: "11",
+    pubIndexId: 11,
     details: {
       __typename: "MagDetails",
       cover: "/resources/publications/1/cover",
@@ -103,19 +103,19 @@ const publicationCatalogResults = [
     transcriptions: [
       {
         __typename: "PubTranscription",
-        id: "101",
+        id: 101,
         song: {
           __typename: "Song",
-          id: "201",
+          id: 201,
           title: "Little Wing",
         },
       },
       {
         __typename: "PubTranscription",
-        id: "102",
+        id: 102,
         song: {
           __typename: "Song",
-          id: "202",
+          id: 202,
           title: "Barracuda",
         },
       },
@@ -123,12 +123,12 @@ const publicationCatalogResults = [
   },
   {
     __typename: "PubSearchResult",
-    id: "2",
+    id: 2,
     name: "Collected Rock Tabs",
     type: "BOOK",
     pubDate: "1989-01-15",
     serialNumber: "ISBN 978-1-2345-6789-0",
-    pubIndexId: "12",
+    pubIndexId: 12,
     details: {
       __typename: "BookDetails",
       cover: null,

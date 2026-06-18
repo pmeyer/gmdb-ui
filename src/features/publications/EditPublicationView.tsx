@@ -33,8 +33,8 @@ function optionalString(value: string | null | undefined) {
   return value ?? "";
 }
 
-function inputDateValue(value: unknown) {
-  return typeof value === "string" ? value.slice(0, 10) : "";
+function inputDateValue(value: string | null | undefined) {
+  return value?.slice(0, 10) ?? "";
 }
 
 function publicationToFormState(
@@ -44,7 +44,7 @@ function publicationToFormState(
     kind: "existing",
     name: publication.name,
     identity: {
-      id: Number(publication.pubIndexId),
+      id: publication.pubIndexId,
       serialNumber: publication.serialNumber,
       type: publication.type,
     },
@@ -110,9 +110,11 @@ export function EditPublicationView({
   onCancel,
   onSaved,
 }: EditPublicationViewProps) {
+  const parsedPublicationId = Number(publicationId);
   const { data, error, loading } = useQuery(PublicationDetailCatalogDocument, {
+    skip: !Number.isInteger(parsedPublicationId),
     variables: {
-      id: publicationId,
+      id: parsedPublicationId,
     },
   });
   const [editMagazineIssue, editMagazineIssueState] = useMutation(

@@ -78,12 +78,12 @@ function songCatalogHandler() {
 const publicationResults = [
   {
     __typename: "PubSearchResult",
-    id: "1",
+    id: 1,
     name: "Guitar World",
     type: "MAG",
     pubDate: "1992-06-01",
     serialNumber: "ISSN 1045-6295",
-    pubIndexId: "11",
+    pubIndexId: 11,
     details: {
       __typename: "MagDetails",
       cover: "/resources/publications/1/cover",
@@ -94,23 +94,23 @@ const publicationResults = [
     transcriptions: [
       {
         __typename: "PubTranscription",
-        id: "101",
+        id: 101,
         url: "/resources/transcriptions/101/file",
         pageNumber: 48,
         song: {
           __typename: "Song",
-          id: "201",
+          id: 201,
           title: "Little Wing",
           album: {
             __typename: "SongAlbum",
-            id: "301",
+            id: 301,
             title: "Axis: Bold as Love",
             trackNumber: 6,
             releaseDate: "1967-12-01",
             albumArtUrl: "/resources/albums/301/cover",
             artist: {
               __typename: "Artist",
-              id: "401",
+              id: 401,
               name: "The Jimi Hendrix Experience",
               type: "BAND",
             },
@@ -118,7 +118,7 @@ const publicationResults = [
           artists: [
             {
               __typename: "SongArtist",
-              id: "402",
+              id: 402,
               name: "Jimi Hendrix",
               type: "PERSON",
               roles: ["PERFORMED_BY", "MUSIC_BY", "WORDS_BY"],
@@ -128,7 +128,7 @@ const publicationResults = [
         transcribers: [
           {
             __typename: "Transcriber",
-            id: "501",
+            id: 501,
             name: "Jane Smith",
           },
         ],
@@ -140,18 +140,18 @@ const publicationResults = [
 const songResults = [
   {
     __typename: "SongSearchResult",
-    id: "201",
+    id: 201,
     title: "Little Wing",
     album: {
       __typename: "SongAlbum",
-      id: "301",
+      id: 301,
       title: "Axis: Bold as Love",
       trackNumber: 6,
       releaseDate: "1967-12-01",
       albumArtUrl: "/resources/albums/301/cover",
       artist: {
         __typename: "Artist",
-        id: "401",
+        id: 401,
         name: "The Jimi Hendrix Experience",
         type: "BAND",
       },
@@ -159,7 +159,7 @@ const songResults = [
     artists: [
       {
         __typename: "SongArtist",
-        id: "402",
+        id: 402,
         name: "Jimi Hendrix",
         type: "PERSON",
         roles: ["PERFORMED_BY"],
@@ -168,17 +168,17 @@ const songResults = [
     transcriptions: [
       {
         __typename: "Transcription",
-        id: "101",
+        id: 101,
         url: "/resources/transcriptions/101/file",
         pageNumber: 48,
         pub: {
           __typename: "TranscriptionPub",
-          id: "1",
+          id: 1,
           name: "Guitar World",
           type: "MAG",
           pubDate: "1992-06-01",
           serialNumber: "ISSN 1045-6295",
-          pubIndexId: "11",
+          pubIndexId: 11,
           details: {
             __typename: "MagDetails",
             cover: null,
@@ -190,7 +190,7 @@ const songResults = [
         transcribers: [
           {
             __typename: "Transcriber",
-            id: "501",
+            id: 501,
             name: "Jane Smith",
           },
         ],

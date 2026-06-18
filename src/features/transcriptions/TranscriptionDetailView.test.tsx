@@ -8,7 +8,7 @@ import { renderWithProviders } from "../../test/renderWithProviders";
 import { TranscriptionDetailView } from "./TranscriptionDetailView";
 
 interface TranscriptionDetailVariables {
-  publicationId?: unknown;
+  publicationId?: number;
 }
 
 interface PublicationWithId {
@@ -56,12 +56,12 @@ function transcriptionDetailHandler(
 const publicationResults = [
   {
     __typename: "PubSearchResult",
-    id: "1",
+    id: 1,
     name: "Guitar World",
     type: "MAG",
     pubDate: "1992-06-01",
     serialNumber: "ISSN 1045-6295",
-    pubIndexId: "11",
+    pubIndexId: 11,
     details: {
       __typename: "MagDetails",
       cover: "/resources/publications/1/cover",
@@ -72,23 +72,23 @@ const publicationResults = [
     transcriptions: [
       {
         __typename: "PubTranscription",
-        id: "101",
+        id: 101,
         url: "/resources/transcriptions/101/file",
         pageNumber: 48,
         song: {
           __typename: "Song",
-          id: "201",
+          id: 201,
           title: "Little Wing",
           album: {
             __typename: "SongAlbum",
-            id: "301",
+            id: 301,
             title: "Axis: Bold as Love",
             trackNumber: 6,
             releaseDate: "1967-12-01",
             albumArtUrl: "/resources/albums/301/cover",
             artist: {
               __typename: "Artist",
-              id: "401",
+              id: 401,
               name: "The Jimi Hendrix Experience",
               type: "BAND",
             },
@@ -96,7 +96,7 @@ const publicationResults = [
           artists: [
             {
               __typename: "SongArtist",
-              id: "402",
+              id: 402,
               name: "Jimi Hendrix",
               type: "PERSON",
               roles: ["PERFORMED_BY", "MUSIC_BY", "WORDS_BY"],
@@ -106,24 +106,24 @@ const publicationResults = [
         transcribers: [
           {
             __typename: "Transcriber",
-            id: "501",
+            id: 501,
             name: "Jane Smith",
           },
           {
             __typename: "Transcriber",
-            id: "502",
+            id: 502,
             name: "Pat Lee",
           },
         ],
       },
       {
         __typename: "PubTranscription",
-        id: "102",
+        id: 102,
         url: null,
         pageNumber: null,
         song: {
           __typename: "Song",
-          id: "202",
+          id: 202,
           title: "Untitled Draft",
           album: null,
           artists: [],
@@ -134,12 +134,12 @@ const publicationResults = [
   },
   {
     __typename: "PubSearchResult",
-    id: "2",
+    id: 2,
     name: "Collected Rock Tabs",
     type: "BOOK",
     pubDate: null,
     serialNumber: "ISBN 978-1-2345-6789-0",
-    pubIndexId: "12",
+    pubIndexId: 12,
     details: {
       __typename: "BookDetails",
       cover: null,
@@ -148,16 +148,16 @@ const publicationResults = [
     transcriptions: [
       {
         __typename: "PubTranscription",
-        id: "201",
+        id: 201,
         url: "/resources/transcriptions/201/file",
         pageNumber: 14,
         song: {
           __typename: "Song",
-          id: "301",
+          id: 301,
           title: "Missing Artwork Blues",
           album: {
             __typename: "SongAlbum",
-            id: "401",
+            id: 401,
             title: "No Cover Sessions",
             trackNumber: null,
             releaseDate: null,
@@ -238,7 +238,7 @@ describe("TranscriptionDetailView", () => {
       "/resources/transcriptions/101/file",
     );
     expect(requests).toContainEqual({
-      publicationId: "1",
+      publicationId: 1,
     });
   });
 

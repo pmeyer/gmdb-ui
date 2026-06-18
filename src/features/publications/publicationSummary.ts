@@ -4,7 +4,7 @@ import type { PublicationCardProps } from "../../components/catalog";
 import type { PubType } from "../../graphql/generated/graphql";
 
 interface PublicationTranscriptionSummary {
-  id: unknown;
+  id: number;
   pageNumber?: number | null;
   song: {
     title: string;
@@ -26,10 +26,10 @@ type PublicationDetails =
     };
 
 export interface PublicationSearchResult {
-  id: unknown;
+  id: number;
   name: string;
   type: PubType;
-  pubDate: unknown;
+  pubDate: string | null;
   serialNumber: string;
   details: PublicationDetails;
   transcriptions: PublicationTranscriptionSummary[] | null;
@@ -58,15 +58,15 @@ export interface PublicationDetailSummary {
   transcriptions: PublicationTranscriptionItem[];
 }
 
-function optionalText(value: unknown) {
-  if (typeof value !== "string" || value.trim().length === 0) {
+function optionalText(value: string | null | undefined) {
+  if (value === null || value === undefined || value.trim().length === 0) {
     return undefined;
   }
 
   return value;
 }
 
-function formatPublicationDate(value: unknown) {
+function formatPublicationDate(value: string | null | undefined) {
   const dateValue = optionalText(value);
 
   if (dateValue === undefined) {

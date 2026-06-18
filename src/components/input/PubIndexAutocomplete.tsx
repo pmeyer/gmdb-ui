@@ -19,7 +19,7 @@ function mapData(queryData: GetPubIndicesQuery | undefined): ExistingPubIndexVal
     kind: 'existing',
     name,
     identity: {
-      id: Number(id),
+      id,
       type,
       serialNumber,
     }

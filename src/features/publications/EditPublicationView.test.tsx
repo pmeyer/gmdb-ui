@@ -123,12 +123,12 @@ function editMagazineIssueHandler(
       data: {
         addMagazineIssue: {
           __typename: "PubSearchResult",
-          id: "1",
+          id: 1,
           name: "Guitar World Updated",
           type: "MAG",
           pubDate: "1992-07-01",
           serialNumber: "ISSN 1045-6295",
-          pubIndexId: "11",
+          pubIndexId: 11,
           details: {
             __typename: "MagDetails",
             cover: "/resources/publications/1/cover",
@@ -146,12 +146,12 @@ function editMagazineIssueHandler(
 const publicationDetailResults = [
   {
     __typename: "PubSearchResult",
-    id: "1",
+    id: 1,
     name: "Guitar World",
     type: "MAG",
     pubDate: "1992-06-01",
     serialNumber: "ISSN 1045-6295",
-    pubIndexId: "11",
+    pubIndexId: 11,
     details: {
       __typename: "MagDetails",
       cover: "/resources/publications/1/cover",
@@ -163,12 +163,12 @@ const publicationDetailResults = [
   },
   {
     __typename: "PubSearchResult",
-    id: "2",
+    id: 2,
     name: "Collected Rock Tabs",
     type: "BOOK",
     pubDate: "1989-01-15",
     serialNumber: "ISBN 978-1-2345-6789-0",
-    pubIndexId: "12",
+    pubIndexId: 12,
     details: {
       __typename: "BookDetails",
       cover: null,
@@ -311,7 +311,7 @@ describe("EditPublicationView", () => {
           issueName: "Updated Songs",
         },
         pubDate: "1992-07-01",
-        pubId: "1",
+        pubId: 1,
       },
     });
     expect(mutationRequests[0].magInput.transcriptions).toBeUndefined();
@@ -363,7 +363,7 @@ describe("EditPublicationView", () => {
         index: {
           id: 13,
         },
-        pubId: "1",
+        pubId: 1,
       },
     });
   });
@@ -412,7 +412,7 @@ describe("EditPublicationView", () => {
             type: "MAG",
           },
         },
-        pubId: "1",
+        pubId: 1,
       },
     });
   });
