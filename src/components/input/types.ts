@@ -1,4 +1,4 @@
-import { PubType} from '../../graphql/generated/graphql';
+import type { PubType } from '../../graphql/generated/graphql';
 
 export interface PubIndexIdentity {
   id: number;
@@ -6,40 +6,26 @@ export interface PubIndexIdentity {
   serialNumber: string;
 }
 
-export interface PubIndexAutocompleteItem {
+export interface ExistingPubIndexValue {
+  kind: 'existing';
   name: string;
-  identity?: PubIndexIdentity;
-  addNew?: boolean;
-  inputValue?: string;
-}
-
-export interface ExistingPubIndexItem extends PubIndexAutocompleteItem {
   identity: PubIndexIdentity;
-  addNew?: undefined;
-  inputValue?: undefined;
 }
 
-export interface NewPubIndexTitleItem extends PubIndexAutocompleteItem {
-  identity?: undefined;
-  addNew: true;
-  inputValue: string;
+export interface NewPubIndexValue {
+  kind: 'new';
+  name: string;
 }
 
-export type PubIndexChangeEventHandler = (v: PubIndexAutocompleteItem | null) => void;
+export type PubIndexAutocompleteValue = ExistingPubIndexValue | NewPubIndexValue;
+
+export type PubIndexChangeEventHandler = (v: PubIndexAutocompleteValue | null) => void;
 
 export interface PubIndexAutocompleteProps {
-  value: PubIndexAutocompleteItem | null;
+  value: PubIndexAutocompleteValue | null;
   onChange: PubIndexChangeEventHandler;
-  allowNewPubs?: boolean;
+  allowAddNew?: boolean;
   disabled?: boolean;
   errorText?: string;
   pubType?: PubType;
-}
-
-export function isExistingPubIndexItem(v: PubIndexAutocompleteItem | string | null): v is ExistingPubIndexItem {
-  return v !== null && typeof v === 'object' && v.identity !== undefined;
-}
-
-export function isNewPubTitleItem(v: PubIndexAutocompleteItem | string | null): v is NewPubIndexTitleItem {
-  return v !== null && typeof v === 'object' && Boolean(v.addNew);
 }

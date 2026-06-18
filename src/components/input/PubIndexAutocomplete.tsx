@@ -4,10 +4,19 @@ import { useCallback, useMemo } from 'react';
 import { Autocomplete, Box, Chip, createFilterOptions, InputAdornment, TextField, Typography } from '@mui/material';
 import type { FilterOptionsState } from '@mui/material';
 import { getFormattedSerialNumber } from '../../utils/serialNumberUtils';
-import { ExistingPubIndexItem, isExistingPubIndexItem, isNewPubTitleItem, NewPubIndexTitleItem, PubIndexAutocompleteItem, PubIndexAutocompleteProps, PubIndexIdentity } from './types';
+import type { ExistingPubIndexValue, PubIndexAutocompleteProps, PubIndexAutocompleteValue, PubIndexIdentity } from './types';
 
-function mapData(queryData: GetPubIndicesQuery | undefined): ExistingPubIndexItem[] {
+interface AddPubIndexOption {
+  kind: 'add-option';
+  name: string;
+  inputValue: string;
+}
+
+type PubIndexAutocompleteOption = PubIndexAutocompleteValue | AddPubIndexOption;
+
+function mapData(queryData: GetPubIndicesQuery | undefined): ExistingPubIndexValue[] {
   return queryData?.getPubIndices.map(({ id, name, type, serialNumber }) => ({
+    kind: 'existing',
     name,
     identity: {
       id: Number(id),
@@ -17,13 +26,13 @@ function mapData(queryData: GetPubIndicesQuery | undefined): ExistingPubIndexIte
   })) ?? [];
 }
 
-const filter = createFilterOptions<PubIndexAutocompleteItem>();
+const filter = createFilterOptions<PubIndexAutocompleteOption>();
 
 function normalizePublicationName(value: string) {
   return value.trim().toLocaleLowerCase();
 }
 
-function getOptionLabel(option: PubIndexAutocompleteItem | string): string {
+function getOptionLabel(option: PubIndexAutocompleteOption | string): string {
   if (typeof option === 'string') {
     return option;
   }
@@ -31,8 +40,11 @@ function getOptionLabel(option: PubIndexAutocompleteItem | string): string {
   return option.name;
 };
 
-function sameIdentity(option: PubIndexAutocompleteItem, value: PubIndexAutocompleteItem | string) {
-  return isExistingPubIndexItem(option) && isExistingPubIndexItem(value) && option.identity.id === value.identity.id;
+function sameIdentity(option: PubIndexAutocompleteOption, value: PubIndexAutocompleteOption | string) {
+  return option.kind === 'existing' &&
+    typeof value !== 'string' &&
+    value.kind === 'existing' &&
+    option.identity.id === value.identity.id;
 }
 
 function formatSerialNumber({serialNumber}: PubIndexIdentity) {
@@ -40,10 +52,10 @@ function formatSerialNumber({serialNumber}: PubIndexIdentity) {
   return format ? `${format}: ${formattedValue}` : formattedValue;
 }
 
-export function PubIndexAutocomplete({value, onChange, allowNewPubs = false, errorText, disabled, pubType}: PubIndexAutocompleteProps) {
+export function PubIndexAutocomplete({value, onChange, allowAddNew = false, errorText, disabled, pubType}: PubIndexAutocompleteProps) {
   const { data, error, loading } = useQuery(GetPubIndicesDocument, { variables: { pubType }});
 
-  const options = useMemo<ExistingPubIndexItem[]>(() => mapData(data), [data]);
+  const options = useMemo<ExistingPubIndexValue[]>(() => mapData(data), [data]);
 
   const errorHelperText = useMemo(() => {
     if (!error && !errorText) {
@@ -52,9 +64,12 @@ export function PubIndexAutocomplete({value, onChange, allowNewPubs = false, err
     return error ? "Unable to load publication indices." : errorText;
   }, [error, errorText]);
 
-  const filterOptions = useCallback((opts: PubIndexAutocompleteItem[], params: FilterOptionsState<PubIndexAutocompleteItem>) => {
-    const filtered = filter(opts, params);
-    if (allowNewPubs) {
+  const filterOptions = useCallback((opts: PubIndexAutocompleteOption[], params: FilterOptionsState<PubIndexAutocompleteOption>) => {
+    const filtered = filter(opts, {
+      ...params,
+      inputValue: params.inputValue.trim(),
+    });
+    if (allowAddNew) {
       const { inputValue } = params;
       const trimmedInputValue = inputValue.trim();
       const normalizedInputValue = normalizePublicationName(inputValue);
@@ -63,25 +78,25 @@ export function PubIndexAutocomplete({value, onChange, allowNewPubs = false, err
       );
       if (trimmedInputValue !== '' && !isExisting) {
         filtered.push({
-          addNew: true,
+          kind: 'add-option',
           inputValue: trimmedInputValue,
           name: `Add "${trimmedInputValue}"`
-        } satisfies NewPubIndexTitleItem);
+        });
       }
     }
     return filtered;
-  }, [allowNewPubs]);
+  }, [allowAddNew]);
 
-  const handlePubIndexChange = useCallback((_: React.SyntheticEvent, nextValue: PubIndexAutocompleteItem | string | null) => {
-    let value: PubIndexAutocompleteItem | null;
+  const handlePubIndexChange = useCallback((_: React.SyntheticEvent, nextValue: PubIndexAutocompleteOption | string | null) => {
+    let value: PubIndexAutocompleteValue | null;
     if (typeof nextValue === 'string') {
       const trimmedValue = nextValue.trim();
       const normalizedValue = normalizePublicationName(nextValue);
       value = options.find(
         ({ name }) => normalizePublicationName(name) === normalizedValue,
-      ) ?? { addNew: true, name: trimmedValue };
-    } else if (nextValue?.inputValue) {
-      value = { addNew: true, name: nextValue.inputValue };
+      ) ?? { kind: 'new', name: trimmedValue };
+    } else if (nextValue?.kind === 'add-option') {
+      value = { kind: 'new', name: nextValue.inputValue };
     } else {
       value = nextValue;
     }
@@ -95,7 +110,7 @@ export function PubIndexAutocomplete({value, onChange, allowNewPubs = false, err
       options={options}
       getOptionLabel={getOptionLabel}
       disableListWrap
-      freeSolo={allowNewPubs}
+      freeSolo={allowAddNew}
       loading={loading}
       openOnFocus
       autoHighlight
@@ -112,7 +127,7 @@ export function PubIndexAutocomplete({value, onChange, allowNewPubs = false, err
           label="Publication"
           placeholder="Start typing a publication name"
           error={Boolean(errorHelperText)}
-          helperText={errorHelperText ?? `Select an existing publication${allowNewPubs ? ' or enter a new title' : ''}`}
+          helperText={errorHelperText ?? `Select an existing publication${allowAddNew ? ' or enter a new title' : ''}`}
           required
           autoComplete="off"
           slotProps={{
@@ -121,7 +136,7 @@ export function PubIndexAutocomplete({value, onChange, allowNewPubs = false, err
               ...params.slotProps.input,
               startAdornment: (
                 <>
-                  {isNewPubTitleItem(value) && <InputAdornment position="start" sx={{mr: 0}}>
+                  {value?.kind === 'new' && <InputAdornment position="start" sx={{mr: 0}}>
                     <Chip size="small" label="New" color="secondary" sx={{ '& .MuiChip-label': { fontWeight: 'bolder' } }} />
                     </InputAdornment>}
                   {params.slotProps.input.startAdornment}
@@ -135,7 +150,7 @@ export function PubIndexAutocomplete({value, onChange, allowNewPubs = false, err
         <Box component="li" key={key} {...otherProps}>
           <Box>
             <Typography variant="body1">{option.name}</Typography>
-            {isExistingPubIndexItem(option) &&
+            {option.kind === 'existing' &&
             <Typography variant="body2" color="text.secondary">
                 {formatSerialNumber(option.identity)}
             </Typography>}
