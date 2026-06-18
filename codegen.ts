@@ -1,5 +1,16 @@
 import type { CodegenConfig } from "@graphql-codegen/cli";
 
+const scalars = {
+  Date: {
+    input: "string",
+    output: "string",
+  },
+  Long: {
+    input: "number",
+    output: "number",
+  },
+};
+
 const config: CodegenConfig = {
   overwrite: true,
   schema: process.env.GRAPHQL_SCHEMA ?? "http://localhost:8080/graphql",
@@ -10,6 +21,7 @@ const config: CodegenConfig = {
       config: {
         generateOperationTypes: false,
         nonOptionalTypename: true,
+        scalars,
         skipTypeNameForRoot: true,
         useTypeImports: true,
       },
@@ -20,6 +32,7 @@ const config: CodegenConfig = {
       config: {
         importSchemaTypesFrom: "./src/graphql/generated/graphql.ts",
         nonOptionalTypename: true,
+        scalars,
         skipTypeNameForRoot: true,
         useTypeImports: true,
       },

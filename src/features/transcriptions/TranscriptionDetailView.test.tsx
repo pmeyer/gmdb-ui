@@ -8,7 +8,7 @@ import { renderWithProviders } from "../../test/renderWithProviders";
 import { TranscriptionDetailView } from "./TranscriptionDetailView";
 
 interface TranscriptionDetailVariables {
-  publicationId?: unknown;
+  publicationId?: number;
 }
 
 interface PublicationWithId {
@@ -238,7 +238,7 @@ describe("TranscriptionDetailView", () => {
       "/resources/transcriptions/101/file",
     );
     expect(requests).toContainEqual({
-      publicationId: "1",
+      publicationId: 1,
     });
   });
 

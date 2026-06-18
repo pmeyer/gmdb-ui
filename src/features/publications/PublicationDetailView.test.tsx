@@ -8,7 +8,7 @@ import { renderWithProviders } from "../../test/renderWithProviders";
 import { PublicationDetailView } from "./PublicationDetailView";
 
 interface PublicationDetailVariables {
-  id?: unknown;
+  id?: number;
 }
 
 interface PublicationWithId {
@@ -177,7 +177,7 @@ describe("PublicationDetailView", () => {
     expect(screen.getByText("Guitar World, June 1, 1992 · Page 48")).toBeInTheDocument();
     expect(screen.getByText("Guitar World, June 1, 1992 · Page 62")).toBeInTheDocument();
     expect(requests).toContainEqual({
-      id: "1",
+      id: 1,
     });
   });
 

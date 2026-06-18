@@ -28,7 +28,7 @@ export interface PublicationFormState {
 
 interface BuildPublicationInputOptions {
   includeTranscriptions: boolean;
-  publicationId?: unknown;
+  publicationId?: number;
 }
 
 export const initialPublicationFormState: PublicationFormState = {
@@ -51,10 +51,8 @@ export function trimmedValue(value: string) {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-export function idToString(value: unknown) {
-  return typeof value === "string" || typeof value === "number"
-    ? value.toString()
-    : "";
+export function idToString(value: number | null | undefined) {
+  return value?.toString() ?? "";
 }
 
 function buildIndexInput(

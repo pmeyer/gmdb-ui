@@ -9,6 +9,7 @@ GraphQL code generation is configured in `codegen.ts` and follows the Apollo Cli
 - Application operations should be authored as `.graphql` files near the component or module that uses them.
 - Operation-specific generated files are emitted next to the source `.graphql` file via the `near-operation-file` preset.
 - Operation output includes `typescript-operations` types and `typed-document-node` precompiled documents, so application code should import the generated document instead of defining runtime `gql` template literals in TypeScript or TSX files.
+- Custom scalar mappings apply to both GraphQL inputs and outputs: `Long` maps to TypeScript `number`, and `Date` maps to TypeScript `string`.
 - `npm run codegen` regenerates both shared schema types and operation-local generated files. The schema endpoint defaults to `http://localhost:8080/graphql` and can be overridden with `GRAPHQL_SCHEMA`.
 - Generated files should be committed with the source operation changes so type safety is stable in CI and for developers without a running API.
 

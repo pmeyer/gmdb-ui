@@ -49,15 +49,15 @@ const artistRoleOrder: SongArtistRole[] = [
   "WORDS_BY",
 ];
 
-function optionalText(value: unknown) {
-  if (typeof value !== "string" || value.trim().length === 0) {
+function optionalText(value: string | null | undefined) {
+  if (value === null || value === undefined || value.trim().length === 0) {
     return undefined;
   }
 
   return value.trim();
 }
 
-function formatDate(value: unknown) {
+function formatDate(value: string | null | undefined) {
   const dateValue = optionalText(value);
 
   if (dateValue === undefined) {

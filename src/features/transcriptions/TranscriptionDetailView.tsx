@@ -285,9 +285,11 @@ export function TranscriptionDetailView({
   onBack,
 }: TranscriptionDetailViewProps) {
   const [notice, setNotice] = useState<string | null>(null);
+  const parsedPublicationId = Number(publicationId);
   const { data, error, loading } = useQuery(TranscriptionDetailCatalogDocument, {
+    skip: !Number.isInteger(parsedPublicationId),
     variables: {
-      publicationId,
+      publicationId: parsedPublicationId,
     },
   });
 

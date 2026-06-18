@@ -10,27 +10,27 @@ export type AddPublicationIndexLookupQueryVariables = Exact<{
 }>;
 
 
-export type AddPublicationIndexLookupQuery = { getPubIndices: Array<{ __typename: 'PubIndexResult', id: unknown, name: string, type: Types.PubType, serialNumber: string }> };
+export type AddPublicationIndexLookupQuery = { getPubIndices: Array<{ __typename: 'PubIndexResult', id: number, name: string, type: Types.PubType, serialNumber: string }> };
 
 export type AddMagazineIssueMutationVariables = Exact<{
   magInput: Types.MagazineInput;
 }>;
 
 
-export type AddMagazineIssueMutation = { addMagazineIssue: { __typename: 'PubSearchResult', id: unknown, name: string, type: Types.PubType, pubDate: unknown, serialNumber: string, pubIndexId: unknown, details:
-      | { __typename: 'BookDetails', edition: string | null, cover: string | null }
-      | { __typename: 'MagDetails', volume: string | null, issue: string | null, issueName: string | null, cover: string | null }
-    , transcriptions: Array<{ __typename: 'PubTranscription', id: unknown, song: { __typename: 'Song', id: unknown, title: string } }> | null } };
+export type AddMagazineIssueMutation = { addMagazineIssue: { __typename: 'PubSearchResult', id: number, name: string, type: Types.PubType, pubDate: string | null, serialNumber: string, pubIndexId: number, details:
+      | { __typename: 'BookDetails', edition: string, cover: string | null }
+      | { __typename: 'MagDetails', volume: string | null, issue: string | null, issueName: string, cover: string | null }
+    , transcriptions: Array<{ __typename: 'PubTranscription', id: number, song: { __typename: 'Song', id: number, title: string } }> | null } };
 
 export type AddBookEditionMutationVariables = Exact<{
   bookInput: Types.BookInput;
 }>;
 
 
-export type AddBookEditionMutation = { addBookEdition: { __typename: 'PubSearchResult', id: unknown, name: string, type: Types.PubType, pubDate: unknown, serialNumber: string, pubIndexId: unknown, details:
-      | { __typename: 'BookDetails', edition: string | null, cover: string | null }
-      | { __typename: 'MagDetails', volume: string | null, issue: string | null, issueName: string | null, cover: string | null }
-    , transcriptions: Array<{ __typename: 'PubTranscription', id: unknown, song: { __typename: 'Song', id: unknown, title: string } }> | null } };
+export type AddBookEditionMutation = { addBookEdition: { __typename: 'PubSearchResult', id: number, name: string, type: Types.PubType, pubDate: string | null, serialNumber: string, pubIndexId: number, details:
+      | { __typename: 'BookDetails', edition: string, cover: string | null }
+      | { __typename: 'MagDetails', volume: string | null, issue: string | null, issueName: string, cover: string | null }
+    , transcriptions: Array<{ __typename: 'PubTranscription', id: number, song: { __typename: 'Song', id: number, title: string } }> | null } };
 
 
 export const AddPublicationIndexLookupDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"AddPublicationIndexLookup"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"criteria"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"PubIndexCriteria"}}},"defaultValue":{"kind":"ObjectValue","fields":[]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"getPubIndices"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"criteria"},"value":{"kind":"Variable","name":{"kind":"Name","value":"criteria"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"serialNumber"}}]}}]}}]} as unknown as DocumentNode<AddPublicationIndexLookupQuery, AddPublicationIndexLookupQueryVariables>;
