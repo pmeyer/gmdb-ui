@@ -37,7 +37,7 @@ function getOptionLabel(option: PubIndexAutocompleteOption | string): string {
     return option;
   }
 
-  return option.name;
+  return option.kind === 'add-option' ? option.inputValue : option.name;
 };
 
 function sameIdentity(option: PubIndexAutocompleteOption, value: PubIndexAutocompleteOption | string) {
@@ -45,6 +45,23 @@ function sameIdentity(option: PubIndexAutocompleteOption, value: PubIndexAutocom
     typeof value !== 'string' &&
     value.kind === 'existing' &&
     option.identity.id === value.identity.id;
+}
+
+function sameValue(
+  currentValue: PubIndexAutocompleteValue | null,
+  nextValue: PubIndexAutocompleteValue | null,
+) {
+  if (currentValue === null || nextValue === null) {
+    return currentValue === nextValue;
+  }
+
+  if (currentValue.kind !== nextValue.kind) {
+    return false;
+  }
+
+  return currentValue.kind === 'existing' && nextValue.kind === 'existing'
+    ? currentValue.identity.id === nextValue.identity.id
+    : currentValue.name === nextValue.name;
 }
 
 function formatSerialNumber({serialNumber}: PubIndexIdentity) {
@@ -88,20 +105,23 @@ export function PubIndexAutocomplete({value, onChange, allowAddNew = false, erro
   }, [allowAddNew]);
 
   const handlePubIndexChange = useCallback((_: React.SyntheticEvent, nextValue: PubIndexAutocompleteOption | string | null) => {
-    let value: PubIndexAutocompleteValue | null;
+    let resolvedValue: PubIndexAutocompleteValue | null;
     if (typeof nextValue === 'string') {
       const trimmedValue = nextValue.trim();
       const normalizedValue = normalizePublicationName(nextValue);
-      value = options.find(
+      resolvedValue = options.find(
         ({ name }) => normalizePublicationName(name) === normalizedValue,
       ) ?? { kind: 'new', name: trimmedValue };
     } else if (nextValue?.kind === 'add-option') {
-      value = { kind: 'new', name: nextValue.inputValue };
+      resolvedValue = { kind: 'new', name: nextValue.inputValue };
     } else {
-      value = nextValue;
+      resolvedValue = nextValue;
     }
-    onChange(value);
-  } ,[onChange, options]);
+
+    if (!sameValue(value, resolvedValue)) {
+      onChange(resolvedValue);
+    }
+  } ,[onChange, options, value]);
 
   return (
     <Autocomplete
@@ -113,7 +133,6 @@ export function PubIndexAutocomplete({value, onChange, allowAddNew = false, erro
       freeSolo={allowAddNew}
       loading={loading}
       openOnFocus
-      autoHighlight
       autoComplete
       autoSelect
       clearOnBlur

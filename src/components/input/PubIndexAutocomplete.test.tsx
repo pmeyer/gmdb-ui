@@ -32,6 +32,13 @@ const publicationIndices = [
     type: "BOOK",
     serialNumber: "0898987660",
   },
+  {
+    __typename: "PubIndexResult",
+    id: 13,
+    name: "Guitar Player",
+    type: "MAG",
+    serialNumber: "00172916",
+  },
 ] as const;
 
 function publicationIndexHandler(
@@ -183,6 +190,173 @@ describe("PubIndexAutocomplete", () => {
     });
     expect(input).toHaveValue("New Guitar Book");
     expect(screen.getByText("New")).toBeInTheDocument();
+  });
+
+  it("preserves the raw title when an edited new publication is reselected", async () => {
+    const user = userEvent.setup();
+    const handleChange = vi.fn();
+    server.use(publicationIndexHandler());
+    renderWithProviders(
+      <ControlledAutocomplete
+        allowAddNew
+        onValueChange={handleChange}
+      />,
+    );
+
+    const input = screen.getByRole("combobox", { name: "Publication" });
+    await user.type(input, "New Mag");
+    await user.click(
+      await screen.findByRole("option", { name: 'Add "New Mag"' }),
+    );
+    await user.type(input, "{Backspace}");
+    expect(
+      await screen.findByRole("option", { name: 'Add "New Ma"' }),
+    ).toBeInTheDocument();
+    await user.type(input, "g");
+    await user.click(
+      await screen.findByRole("option", { name: 'Add "New Mag"' }),
+    );
+
+    expect(input).toHaveValue("New Mag");
+    expect(screen.getByText("New")).toBeInTheDocument();
+    expect(handleChange).toHaveBeenCalledOnce();
+    expect(handleChange).toHaveBeenLastCalledWith({
+      kind: "new",
+      name: "New Mag",
+    });
+  });
+
+  it("preserves a new publication when focus returns and leaves again", async () => {
+    const user = userEvent.setup();
+    const handleChange = vi.fn();
+    server.use(publicationIndexHandler());
+    renderWithProviders(
+      <>
+        <ControlledAutocomplete
+          allowAddNew
+          onValueChange={handleChange}
+        />
+        <input aria-label="Serial number" />
+      </>,
+    );
+
+    const publicationInput = screen.getByRole("combobox", {
+      name: "Publication",
+    });
+    await user.type(publicationInput, "New Guitar Book");
+    await user.tab();
+    await user.tab({ shift: true });
+    await user.tab();
+
+    expect(screen.getByRole("textbox", { name: "Serial number" })).toHaveFocus();
+    expect(publicationInput).toHaveValue("New Guitar Book");
+    expect(screen.getByText("New")).toBeInTheDocument();
+    expect(handleChange).toHaveBeenCalledTimes(1);
+    expect(handleChange).toHaveBeenLastCalledWith({
+      kind: "new",
+      name: "New Guitar Book",
+    });
+  });
+
+  it("treats a partial existing title as new when focus leaves", async () => {
+    const user = userEvent.setup();
+    const handleChange = vi.fn();
+    server.use(publicationIndexHandler());
+    renderWithProviders(
+      <>
+        <ControlledAutocomplete
+          allowAddNew
+          onValueChange={handleChange}
+        />
+        <input aria-label="Serial number" />
+      </>,
+    );
+
+    const publicationInput = screen.getByRole("combobox", {
+      name: "Publication",
+    });
+    await user.type(publicationInput, "Guitar W");
+    await user.tab();
+    await user.tab({ shift: true });
+    await user.tab();
+
+    expect(publicationInput).toHaveValue("Guitar W");
+    expect(screen.getByText("New")).toBeInTheDocument();
+    expect(handleChange).toHaveBeenCalledOnce();
+    expect(handleChange).toHaveBeenLastCalledWith({
+      kind: "new",
+      name: "Guitar W",
+    });
+  });
+
+  it("preserves an explicitly added title that partially matches an existing publication", async () => {
+    const user = userEvent.setup();
+    const handleChange = vi.fn();
+    server.use(publicationIndexHandler());
+    renderWithProviders(
+      <>
+        <ControlledAutocomplete
+          allowAddNew
+          onValueChange={handleChange}
+        />
+        <input aria-label="Serial number" />
+      </>,
+    );
+
+    const publicationInput = screen.getByRole("combobox", {
+      name: "Publication",
+    });
+    await user.type(publicationInput, "Guitar W");
+    await user.click(
+      await screen.findByRole("option", { name: 'Add "Guitar W"' }),
+    );
+    await user.tab();
+    await user.tab({ shift: true });
+    await user.tab();
+
+    expect(publicationInput).toHaveValue("Guitar W");
+    expect(screen.getByText("New")).toBeInTheDocument();
+    expect(handleChange).toHaveBeenCalledOnce();
+    expect(handleChange).toHaveBeenLastCalledWith({
+      kind: "new",
+      name: "Guitar W",
+    });
+  });
+
+  it("selects an exact existing publication when focus leaves", async () => {
+    const user = userEvent.setup();
+    const handleChange = vi.fn();
+    server.use(publicationIndexHandler());
+    renderWithProviders(
+      <>
+        <ControlledAutocomplete
+          allowAddNew
+          onValueChange={handleChange}
+        />
+        <input aria-label="Serial number" />
+      </>,
+    );
+
+    const publicationInput = screen.getByRole("combobox", {
+      name: "Publication",
+    });
+    await user.type(publicationInput, "  guitar world  ");
+    await user.tab();
+    await user.tab({ shift: true });
+    await user.tab();
+
+    expect(screen.getByRole("textbox", { name: "Serial number" })).toHaveFocus();
+    expect(publicationInput).toHaveValue("Guitar World");
+    expect(handleChange).toHaveBeenCalledOnce();
+    expect(handleChange).toHaveBeenLastCalledWith({
+      kind: "existing",
+      name: "Guitar World",
+      identity: {
+        id: 11,
+        type: "MAG",
+        serialNumber: "10456295",
+      },
+    });
   });
 
   it("does not offer a case-insensitive existing title as a new publication", async () => {
