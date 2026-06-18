@@ -382,6 +382,18 @@ export function PublicationForm({
               {isMagazine ? (
                 <>
                   <TextField
+                    error={validationErrors.issueName !== undefined}
+                    helperText={
+                      validationErrors.issueName ??
+                      "Required display name for this magazine issue."
+                    }
+                    label="Issue name"
+                    name="issueName"
+                    onChange={handleTextFieldChange}
+                    required
+                    value={formState.issueName}
+                  />
+                  <TextField
                     helperText="Optional issue volume, typically a number."
                     label="Volume"
                     name="volume"
@@ -394,18 +406,6 @@ export function PublicationForm({
                     name="issue"
                     onChange={handleTextFieldChange}
                     value={formState.issue}
-                  />
-                  <TextField
-                    error={validationErrors.issueName !== undefined}
-                    helperText={
-                      validationErrors.issueName ??
-                      "Required display name for this magazine issue."
-                    }
-                    label="Issue name"
-                    name="issueName"
-                    onChange={handleTextFieldChange}
-                    required
-                    value={formState.issueName}
                   />
                 </>
               ) : (
