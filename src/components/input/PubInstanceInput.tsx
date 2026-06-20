@@ -53,7 +53,7 @@ function NewPubInstanceInput({value, onChange, disabled, errorText, pubType}: Pu
       slotProps={{
         input: {
           startAdornment: value?.kind === 'new' ? (
-            <InputAdornment position="start" sx={{mr: 0}}>
+            <InputAdornment position="start">
               <Chip size="small" label="New" color="secondary" sx={{ '& .MuiChip-label': { fontWeight: 'bolder' } }} />
             </InputAdornment>
           ) : undefined,

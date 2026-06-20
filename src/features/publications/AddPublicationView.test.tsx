@@ -1,5 +1,5 @@
 import { graphql, HttpResponse } from "msw";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -9,6 +9,10 @@ import { AddPublicationView } from "./AddPublicationView";
 
 interface GetPubIndicesVariables {
   pubType?: string;
+}
+
+interface GetPubsForIndexVariables {
+  pubIndexId: number;
 }
 
 interface AddMagazineIssueVariables {
@@ -28,7 +32,7 @@ interface AddMagazineIssueVariables {
       issueName: string;
       cover?: unknown;
     };
-    pubId?: string;
+    pubId?: number;
     transcriptions?: unknown[];
   };
 }
@@ -48,7 +52,7 @@ interface AddBookEditionVariables {
       edition: string;
       cover?: unknown;
     };
-    pubId?: string;
+    pubId?: number;
     transcriptions?: unknown[];
   };
 }
@@ -86,6 +90,41 @@ function publicationIndexLookupHandler(
         ),
       },
     });
+  });
+}
+
+function publicationInstanceLookupHandler() {
+  return graphql.query("GetPubsForIndex", ({ variables }) => {
+    const { pubIndexId } = variables as GetPubsForIndexVariables;
+    const publications = pubIndexId === 11
+      ? [
+          {
+            __typename: "PubSearchResult",
+            id: 1,
+            pubDate: "1992-06-01",
+            details: {
+              __typename: "MagDetails",
+              cover: null,
+              issueName: "Summer Songs",
+              volume: "12",
+              issue: "4",
+            },
+          },
+        ]
+      : [
+          {
+            __typename: "PubSearchResult",
+            id: 2,
+            pubDate: "1989-01-15",
+            details: {
+              __typename: "BookDetails",
+              cover: null,
+              edition: "First edition",
+            },
+          },
+        ];
+
+    return HttpResponse.json({ data: { pubSearch: publications } });
   });
 }
 
@@ -171,6 +210,9 @@ async function chooseNewPublication(name: string) {
 }
 
 describe("AddPublicationView", () => {
+  beforeEach(() => {
+    server.use(publicationInstanceLookupHandler());
+  });
   it("renders magazine issue fields by default and looks up existing magazines", async () => {
     const requests: GetPubIndicesVariables[] = [];
     server.use(
@@ -196,7 +238,7 @@ describe("AddPublicationView", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Volume" })).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Issue" })).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: "Issue name" })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Issue Name" })).toBeInTheDocument();
 
     await waitFor(() => {
       expect(
@@ -220,7 +262,7 @@ describe("AddPublicationView", () => {
     expect(screen.getByRole("textbox", { name: "Edition" })).toBeInTheDocument();
     expect(screen.queryByRole("textbox", { name: "Volume" })).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("textbox", { name: "Issue name" }),
+      screen.queryByRole("textbox", { name: "Issue Name" }),
     ).not.toBeInTheDocument();
   });
 
@@ -281,14 +323,16 @@ describe("AddPublicationView", () => {
 
     const user = await chooseExistingMagazine();
     expect(screen.getByRole("textbox", { name: "Serial number (ISSN)" })).toBeDisabled();
+    const issueNameInput = await screen.findByRole("combobox", {
+      name: "Issue Name",
+    });
+    await user.click(issueNameInput);
+    await user.click(await screen.findByRole("option", { name: /Summer Songs/ }));
     fireEvent.change(screen.getByRole("textbox", { name: "Volume" }), {
       target: { value: "50" },
     });
     fireEvent.change(screen.getByRole("textbox", { name: "Issue" }), {
       target: { value: "6" },
-    });
-    fireEvent.change(screen.getByRole("textbox", { name: "Issue name" }), {
-      target: { value: "Summer Songs" },
     });
     fireEvent.change(screen.getByLabelText("Publication date"), {
       target: { value: "2026-06-01" },
@@ -312,7 +356,7 @@ describe("AddPublicationView", () => {
         transcriptions: [],
       },
     });
-    expect(mutationRequests[0].magInput.pubId).toBeUndefined();
+    expect(mutationRequests[0].magInput.pubId).toBe(1);
   });
 
   it("submits a typed new magazine identity with a custom serial number", async () => {
@@ -334,7 +378,7 @@ describe("AddPublicationView", () => {
       target: { value: "SELF-PUB-001" },
     });
     expect(serialInput).toHaveValue("SELF-PUB-001");
-    fireEvent.change(screen.getByRole("textbox", { name: "Issue name" }), {
+    fireEvent.change(screen.getByRole("textbox", { name: "Issue Name" }), {
       target: { value: "Launch Issue" },
     });
     await user.click(screen.getByRole("button", { name: "Save publication" }));
@@ -376,7 +420,7 @@ describe("AddPublicationView", () => {
     });
     expect(serialInput).toHaveValue("1045-6295");
     expect(screen.getByText("ISSN")).toBeInTheDocument();
-    fireEvent.change(screen.getByRole("textbox", { name: "Issue name" }), {
+    fireEvent.change(screen.getByRole("textbox", { name: "Issue Name" }), {
       target: { value: "Launch Issue" },
     });
     await user.click(screen.getByRole("button", { name: "Save publication" }));
@@ -417,9 +461,11 @@ describe("AddPublicationView", () => {
         name: /Collected Rock Tabs/,
       }),
     );
-    fireEvent.change(screen.getByRole("textbox", { name: "Edition" }), {
-      target: { value: "First edition" },
-    });
+    const editionInput = await screen.findByRole("combobox", { name: "Edition" });
+    await user.type(editionInput, "Revised edition");
+    await user.click(
+      await screen.findByRole("option", { name: 'Add "Revised edition"' }),
+    );
     fireEvent.change(screen.getByLabelText("Publication date"), {
       target: { value: "1989-01-15" },
     });
@@ -435,7 +481,7 @@ describe("AddPublicationView", () => {
           id: 12,
         },
         info: {
-          edition: "First edition",
+          edition: "Revised edition",
         },
         transcriptions: [],
       },

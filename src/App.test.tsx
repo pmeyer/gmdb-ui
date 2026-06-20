@@ -45,6 +45,25 @@ function publicationIndexLookupHandler() {
   );
 }
 
+function publicationInstanceLookupHandler() {
+  return graphql.query("GetPubsForIndex", ({ variables }) => {
+    const { pubIndexId } = variables;
+
+    return HttpResponse.json({
+      data: {
+        pubSearch: publicationResults
+          .filter((publication) => publication.pubIndexId === pubIndexId)
+          .map(({ id, pubDate, details }) => ({
+            __typename: "PubSearchResult",
+            id,
+            pubDate,
+            details,
+          })),
+      },
+    });
+  });
+}
+
 function publicationDetailHandler() {
   return graphql.query("PublicationDetailCatalog", () =>
     HttpResponse.json({
@@ -291,6 +310,7 @@ describe("App", () => {
       publicationCatalogHandler(),
       publicationDetailHandler(),
       publicationIndexLookupHandler(),
+      publicationInstanceLookupHandler(),
     );
 
     renderWithProviders(<App />);
@@ -316,6 +336,7 @@ describe("App", () => {
       publicationCatalogHandler(),
       publicationDetailHandler(),
       publicationIndexLookupHandler(),
+      publicationInstanceLookupHandler(),
     );
 
     renderWithProviders(<App />);

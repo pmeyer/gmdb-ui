@@ -4,7 +4,10 @@ import type {
   PubIndexInput,
   PubType,
 } from "../../graphql/generated/graphql";
-import type { ExistingPubIndexValue } from "../../components/input/types";
+import type {
+  ExistingPubIndexValue,
+  PubInstanceValue,
+} from "../../components/input/types";
 
 export type PublicationFormKind = PubType;
 export type PublicationSourceMode = "EXISTING" | "NEW";
@@ -13,6 +16,7 @@ export interface PublicationFormState {
   kind: PublicationFormKind;
   sourceMode: PublicationSourceMode;
   existingPublication: ExistingPubIndexValue | null;
+  publicationInstance: PubInstanceValue | null;
   name: string;
   serialNumber: string;
   volume: string;
@@ -33,6 +37,7 @@ export const initialPublicationFormState: PublicationFormState = {
   kind: "MAG",
   sourceMode: "NEW",
   existingPublication: null,
+  publicationInstance: null,
   name: "",
   serialNumber: "",
   volume: "",
@@ -78,6 +83,11 @@ export function buildMagazineInput(
   formState: PublicationFormState,
   options: BuildPublicationInputOptions = { includeTranscriptions: true },
 ): MagazineInput {
+  const publicationId = options.publicationId ??
+    (formState.publicationInstance?.kind === "existing"
+      ? formState.publicationInstance.identity.id
+      : undefined);
+
   return {
     index: buildIndexInput(formState),
     info: {
@@ -87,7 +97,7 @@ export function buildMagazineInput(
       volume: trimmedValue(formState.volume),
     },
     pubDate: trimmedValue(formState.publicationDate),
-    ...(options.publicationId !== undefined ? { pubId: options.publicationId } : {}),
+    ...(publicationId !== undefined ? { pubId: publicationId } : {}),
     transcriptions: options.includeTranscriptions ? [] : undefined,
   };
 }
@@ -96,6 +106,11 @@ export function buildBookInput(
   formState: PublicationFormState,
   options: BuildPublicationInputOptions = { includeTranscriptions: true },
 ): BookInput {
+  const publicationId = options.publicationId ??
+    (formState.publicationInstance?.kind === "existing"
+      ? formState.publicationInstance.identity.id
+      : undefined);
+
   return {
     index: buildIndexInput(formState),
     info: {
@@ -103,7 +118,7 @@ export function buildBookInput(
       edition: trimmedValue(formState.edition) ?? "",
     },
     pubDate: trimmedValue(formState.publicationDate),
-    ...(options.publicationId !== undefined ? { pubId: options.publicationId } : {}),
+    ...(publicationId !== undefined ? { pubId: publicationId } : {}),
     transcriptions: options.includeTranscriptions ? [] : undefined,
   };
 }

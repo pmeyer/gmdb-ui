@@ -15,7 +15,11 @@ import {
 
 import { PubIndexAutocomplete } from "../../components/input/PubIndexAutocomplete";
 import { PubIndexSerialNumberInput } from "../../components/input/PubIndexSerialNumberInput";
-import type { PubIndexAutocompleteValue } from "../../components/input/types";
+import { PubInstanceInput } from "../../components/input/PubInstanceInput";
+import type {
+  PubIndexAutocompleteValue,
+  PubInstanceValue,
+} from "../../components/input/types";
 import type { FormattedSerialNumber } from "../../utils/serialNumberUtils";
 import {
   initialPublicationFormState,
@@ -115,12 +119,16 @@ export function PublicationForm({
 
       setFormState((current) => ({
         ...current,
+        coverImage: null,
         edition: "",
+        existingCoverImageUrl: undefined,
         existingPublication: null,
         issue: "",
         issueName: "",
         kind: nextKind,
         name: "",
+        publicationDate: "",
+        publicationInstance: null,
         serialNumber: "",
         sourceMode: "NEW",
         volume: "",
@@ -134,10 +142,18 @@ export function PublicationForm({
       if (nextIdentity?.kind === "existing") {
         setFormState((current) => ({
           ...current,
+          coverImage: null,
+          edition: "",
+          existingCoverImageUrl: undefined,
           existingPublication: nextIdentity,
+          issue: "",
+          issueName: "",
           name: nextIdentity.name,
+          publicationDate: "",
+          publicationInstance: null,
           serialNumber: nextIdentity.identity.serialNumber,
           sourceMode: "EXISTING",
+          volume: "",
         }));
         return;
       }
@@ -152,10 +168,64 @@ export function PublicationForm({
 
         return {
           ...current,
+          coverImage: identityIsUnchanged ? current.coverImage : null,
+          edition: identityIsUnchanged ? current.edition : "",
+          existingCoverImageUrl: identityIsUnchanged
+            ? current.existingCoverImageUrl
+            : undefined,
           existingPublication: null,
+          issue: identityIsUnchanged ? current.issue : "",
+          issueName: identityIsUnchanged ? current.issueName : "",
           name: nextName,
+          publicationDate: identityIsUnchanged ? current.publicationDate : "",
+          publicationInstance: identityIsUnchanged
+            ? current.publicationInstance
+            : null,
           serialNumber: identityIsUnchanged ? current.serialNumber : "",
           sourceMode: "NEW",
+          volume: identityIsUnchanged ? current.volume : "",
+        };
+      });
+    },
+    [],
+  );
+
+  const handlePubInstanceChange = useCallback(
+    (nextInstance: PubInstanceValue | null) => {
+      setFormState((current) => {
+        if (nextInstance?.kind === "existing") {
+          const { identity } = nextInstance;
+
+          return {
+            ...current,
+            coverImage: null,
+            edition: identity.kind === "BOOK" ? nextInstance.name : "",
+            existingCoverImageUrl: identity.coverUrl ?? undefined,
+            issue: identity.kind === "MAG" ? identity.issue ?? "" : "",
+            issueName: identity.kind === "MAG" ? nextInstance.name : "",
+            publicationDate: identity.pubDate?.slice(0, 10) ?? "",
+            publicationInstance: nextInstance,
+            volume: identity.kind === "MAG" ? identity.volume ?? "" : "",
+          };
+        }
+
+        const transitioningFromExisting =
+          current.publicationInstance?.kind === "existing";
+        const nextName = nextInstance?.name ?? "";
+
+        return {
+          ...current,
+          edition: current.kind === "BOOK" ? nextName : "",
+          existingCoverImageUrl: transitioningFromExisting
+            ? undefined
+            : current.existingCoverImageUrl,
+          issue: transitioningFromExisting ? "" : current.issue,
+          issueName: current.kind === "MAG" ? nextName : "",
+          publicationDate: transitioningFromExisting
+            ? ""
+            : current.publicationDate,
+          publicationInstance: nextInstance,
+          volume: transitioningFromExisting ? "" : current.volume,
         };
       });
     },
@@ -381,17 +451,13 @@ export function PublicationForm({
             >
               {isMagazine ? (
                 <>
-                  <TextField
-                    error={validationErrors.issueName !== undefined}
-                    helperText={
-                      validationErrors.issueName ??
-                      "Required display name for this magazine issue."
-                    }
-                    label="Issue name"
-                    name="issueName"
-                    onChange={handleTextFieldChange}
-                    required
-                    value={formState.issueName}
+                  <PubInstanceInput
+                    allowAddNew
+                    errorText={validationErrors.issueName}
+                    onChange={handlePubInstanceChange}
+                    pubIndexId={formState.existingPublication?.identity.id}
+                    pubType={formState.kind}
+                    value={formState.publicationInstance}
                   />
                   <TextField
                     helperText="Optional issue volume, typically a number."
@@ -409,17 +475,13 @@ export function PublicationForm({
                   />
                 </>
               ) : (
-                <TextField
-                  error={validationErrors.edition !== undefined}
-                  helperText={
-                    validationErrors.edition ??
-                    "Required edition text, such as First edition or Revised edition."
-                  }
-                  label="Edition"
-                  name="edition"
-                  onChange={handleTextFieldChange}
-                  required
-                  value={formState.edition}
+                <PubInstanceInput
+                  allowAddNew
+                  errorText={validationErrors.edition}
+                  onChange={handlePubInstanceChange}
+                  pubIndexId={formState.existingPublication?.identity.id}
+                  pubType={formState.kind}
+                  value={formState.publicationInstance}
                 />
               )}
 
