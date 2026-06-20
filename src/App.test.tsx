@@ -28,13 +28,13 @@ function publicationCatalogHandler() {
 }
 
 function publicationIndexLookupHandler() {
-  return graphql.query("AddPublicationIndexLookup", () =>
+  return graphql.query("GetPubIndices", () =>
     HttpResponse.json({
       data: {
         getPubIndices: [
           {
             __typename: "PubIndexResult",
-            id: "11",
+            id: 11,
             name: "Guitar World",
             type: "MAG",
             serialNumber: "10456295",
@@ -43,6 +43,25 @@ function publicationIndexLookupHandler() {
       },
     }),
   );
+}
+
+function publicationInstanceLookupHandler() {
+  return graphql.query("GetPubsForIndex", ({ variables }) => {
+    const { pubIndexId } = variables;
+
+    return HttpResponse.json({
+      data: {
+        pubSearch: publicationResults
+          .filter((publication) => publication.pubIndexId === pubIndexId)
+          .map(({ id, pubDate, details }) => ({
+            __typename: "PubSearchResult",
+            id,
+            pubDate,
+            details,
+          })),
+      },
+    });
+  });
 }
 
 function publicationDetailHandler() {
@@ -78,12 +97,12 @@ function songCatalogHandler() {
 const publicationResults = [
   {
     __typename: "PubSearchResult",
-    id: "1",
+    id: 1,
     name: "Guitar World",
     type: "MAG",
     pubDate: "1992-06-01",
     serialNumber: "ISSN 1045-6295",
-    pubIndexId: "11",
+    pubIndexId: 11,
     details: {
       __typename: "MagDetails",
       cover: "/resources/publications/1/cover",
@@ -94,23 +113,23 @@ const publicationResults = [
     transcriptions: [
       {
         __typename: "PubTranscription",
-        id: "101",
+        id: 101,
         url: "/resources/transcriptions/101/file",
         pageNumber: 48,
         song: {
           __typename: "Song",
-          id: "201",
+          id: 201,
           title: "Little Wing",
           album: {
             __typename: "SongAlbum",
-            id: "301",
+            id: 301,
             title: "Axis: Bold as Love",
             trackNumber: 6,
             releaseDate: "1967-12-01",
             albumArtUrl: "/resources/albums/301/cover",
             artist: {
               __typename: "Artist",
-              id: "401",
+              id: 401,
               name: "The Jimi Hendrix Experience",
               type: "BAND",
             },
@@ -118,7 +137,7 @@ const publicationResults = [
           artists: [
             {
               __typename: "SongArtist",
-              id: "402",
+              id: 402,
               name: "Jimi Hendrix",
               type: "PERSON",
               roles: ["PERFORMED_BY", "MUSIC_BY", "WORDS_BY"],
@@ -128,7 +147,7 @@ const publicationResults = [
         transcribers: [
           {
             __typename: "Transcriber",
-            id: "501",
+            id: 501,
             name: "Jane Smith",
           },
         ],
@@ -140,18 +159,18 @@ const publicationResults = [
 const songResults = [
   {
     __typename: "SongSearchResult",
-    id: "201",
+    id: 201,
     title: "Little Wing",
     album: {
       __typename: "SongAlbum",
-      id: "301",
+      id: 301,
       title: "Axis: Bold as Love",
       trackNumber: 6,
       releaseDate: "1967-12-01",
       albumArtUrl: "/resources/albums/301/cover",
       artist: {
         __typename: "Artist",
-        id: "401",
+        id: 401,
         name: "The Jimi Hendrix Experience",
         type: "BAND",
       },
@@ -159,7 +178,7 @@ const songResults = [
     artists: [
       {
         __typename: "SongArtist",
-        id: "402",
+        id: 402,
         name: "Jimi Hendrix",
         type: "PERSON",
         roles: ["PERFORMED_BY"],
@@ -168,17 +187,17 @@ const songResults = [
     transcriptions: [
       {
         __typename: "Transcription",
-        id: "101",
+        id: 101,
         url: "/resources/transcriptions/101/file",
         pageNumber: 48,
         pub: {
           __typename: "TranscriptionPub",
-          id: "1",
+          id: 1,
           name: "Guitar World",
           type: "MAG",
           pubDate: "1992-06-01",
           serialNumber: "ISSN 1045-6295",
-          pubIndexId: "11",
+          pubIndexId: 11,
           details: {
             __typename: "MagDetails",
             cover: null,
@@ -190,7 +209,7 @@ const songResults = [
         transcribers: [
           {
             __typename: "Transcriber",
-            id: "501",
+            id: 501,
             name: "Jane Smith",
           },
         ],
@@ -237,7 +256,7 @@ describe("App", () => {
       screen.getByRole("heading", { name: "Add publication" }),
     ).toBeInTheDocument();
     expect(
-      await screen.findByRole("combobox", { name: "Magazine name" }),
+      await screen.findByRole("combobox", { name: "Publication" }),
     ).toBeInTheDocument();
   });
 
@@ -287,7 +306,12 @@ describe("App", () => {
 
   it("navigates from a publication card to publication editing", async () => {
     const user = userEvent.setup();
-    server.use(publicationCatalogHandler(), publicationDetailHandler());
+    server.use(
+      publicationCatalogHandler(),
+      publicationDetailHandler(),
+      publicationIndexLookupHandler(),
+      publicationInstanceLookupHandler(),
+    );
 
     renderWithProviders(<App />);
 
@@ -301,14 +325,19 @@ describe("App", () => {
     expect(
       await screen.findByRole("heading", { name: "Edit publication" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Magazine name" })).toHaveValue(
+    expect(screen.getByRole("combobox", { name: "Publication" })).toHaveValue(
       "Guitar World",
     );
   });
 
   it("navigates from publication details to publication editing", async () => {
     const user = userEvent.setup();
-    server.use(publicationCatalogHandler(), publicationDetailHandler());
+    server.use(
+      publicationCatalogHandler(),
+      publicationDetailHandler(),
+      publicationIndexLookupHandler(),
+      publicationInstanceLookupHandler(),
+    );
 
     renderWithProviders(<App />);
 

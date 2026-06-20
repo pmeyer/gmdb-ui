@@ -1,5 +1,5 @@
 import { graphql, HttpResponse, delay } from "msw";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -15,7 +15,7 @@ interface EditMagazineIssueVariables {
   magInput: {
     pubDate?: string;
     index: {
-      id?: string;
+      id?: number;
       data?: {
         name: string;
         serial: string;
@@ -28,44 +28,75 @@ interface EditMagazineIssueVariables {
       issueName: string;
       cover?: unknown;
     };
-    pubId?: string;
+    pubId?: number;
     transcriptions?: unknown[];
   };
 }
 
-function publicationIndexLookupHandler(onRequest?: () => void) {
-  return graphql.query("AddPublicationIndexLookup", () => {
-    onRequest?.();
+interface GetPubIndicesVariables {
+  pubType?: string;
+}
 
-    return (
-    HttpResponse.json({
-      data: {
-        getPubIndices: [
-          {
-            __typename: "PubIndexResult",
-            id: "11",
-            name: "Guitar World",
-            type: "MAG",
-            serialNumber: "ISSN 1045-6295",
-          },
-          {
-            __typename: "PubIndexResult",
-            id: "13",
-            name: "Guitar for the Practicing Musician",
-            type: "MAG",
-            serialNumber: "ISSN 0748-9637",
-          },
-          {
-            __typename: "PubIndexResult",
-            id: "12",
-            name: "Collected Rock Tabs",
-            type: "BOOK",
-            serialNumber: "ISBN 978-1-2345-6789-0",
-          },
-        ],
+interface GetPubsForIndexVariables {
+  pubIndexId: number;
+}
+
+function publicationIndexLookupHandler(
+  onRequest?: (variables: GetPubIndicesVariables) => void,
+) {
+  return graphql.query("GetPubIndices", ({ variables }) => {
+    const typedVariables = variables as GetPubIndicesVariables;
+    onRequest?.(typedVariables);
+
+    const publicationIndices = [
+      {
+        __typename: "PubIndexResult",
+        id: 11,
+        name: "Guitar World",
+        type: "MAG",
+        serialNumber: "ISSN 1045-6295",
       },
-    })
-    );
+      {
+        __typename: "PubIndexResult",
+        id: 13,
+        name: "Guitar for the Practicing Musician",
+        type: "MAG",
+        serialNumber: "ISSN 0748-9637",
+      },
+      {
+        __typename: "PubIndexResult",
+        id: 12,
+        name: "Collected Rock Tabs",
+        type: "BOOK",
+        serialNumber: "ISBN 978-1-2345-6789-0",
+      },
+    ];
+
+    return HttpResponse.json({
+      data: {
+        getPubIndices: publicationIndices.filter(
+          ({ type }) =>
+            typedVariables.pubType === undefined ||
+            type === typedVariables.pubType,
+        ),
+      },
+    });
+  });
+}
+
+function publicationInstanceLookupHandler() {
+  return graphql.query("GetPubsForIndex", ({ variables }) => {
+    const { pubIndexId } = variables as GetPubsForIndexVariables;
+    const publications = publicationDetailResults.filter(
+      (publication) => publication.pubIndexId === pubIndexId,
+    ).map(({ id, pubDate, details }) => ({
+      __typename: "PubSearchResult",
+      id,
+      pubDate,
+      details,
+    }));
+
+    return HttpResponse.json({ data: { pubSearch: publications } });
   });
 }
 
@@ -112,12 +143,12 @@ function editMagazineIssueHandler(
       data: {
         addMagazineIssue: {
           __typename: "PubSearchResult",
-          id: "1",
+          id: 1,
           name: "Guitar World Updated",
           type: "MAG",
           pubDate: "1992-07-01",
           serialNumber: "ISSN 1045-6295",
-          pubIndexId: "11",
+          pubIndexId: 11,
           details: {
             __typename: "MagDetails",
             cover: "/resources/publications/1/cover",
@@ -135,12 +166,12 @@ function editMagazineIssueHandler(
 const publicationDetailResults = [
   {
     __typename: "PubSearchResult",
-    id: "1",
+    id: 1,
     name: "Guitar World",
     type: "MAG",
     pubDate: "1992-06-01",
     serialNumber: "ISSN 1045-6295",
-    pubIndexId: "11",
+    pubIndexId: 11,
     details: {
       __typename: "MagDetails",
       cover: "/resources/publications/1/cover",
@@ -152,12 +183,12 @@ const publicationDetailResults = [
   },
   {
     __typename: "PubSearchResult",
-    id: "2",
+    id: 2,
     name: "Collected Rock Tabs",
     type: "BOOK",
     pubDate: "1989-01-15",
     serialNumber: "ISBN 978-1-2345-6789-0",
-    pubIndexId: "12",
+    pubIndexId: 12,
     details: {
       __typename: "BookDetails",
       cover: null,
@@ -168,6 +199,9 @@ const publicationDetailResults = [
 ];
 
 describe("EditPublicationView", () => {
+  beforeEach(() => {
+    server.use(publicationInstanceLookupHandler());
+  });
   it("shows loading placeholders while publication data is loading", () => {
     server.use(
       graphql.query("PublicationDetailCatalog", async () => {
@@ -211,7 +245,7 @@ describe("EditPublicationView", () => {
       "true",
     );
     expect(screen.getByRole("button", { name: "Magazine issue" })).toBeDisabled();
-    expect(screen.getByRole("combobox", { name: "Magazine name" })).toHaveValue(
+    expect(screen.getByRole("combobox", { name: "Publication" })).toHaveValue(
       "Guitar World",
     );
     expect(screen.getByRole("textbox", { name: "Serial number (ISSN)" })).toHaveValue(
@@ -220,7 +254,7 @@ describe("EditPublicationView", () => {
     expect(screen.getByRole("textbox", { name: "Serial number (ISSN)" })).toBeDisabled();
     expect(screen.getByRole("textbox", { name: "Volume" })).toHaveValue("12");
     expect(screen.getByRole("textbox", { name: "Issue" })).toHaveValue("4");
-    expect(screen.getByRole("textbox", { name: "Issue name" })).toHaveValue(
+    expect(screen.getByRole("combobox", { name: "Issue Name" })).toHaveValue(
       "Summer Songs",
     );
     expect(screen.getByLabelText("Publication date")).toHaveValue("1992-06-01");
@@ -238,18 +272,18 @@ describe("EditPublicationView", () => {
     );
 
     expect(
-      await screen.findByRole("combobox", { name: "Book title" }),
+      await screen.findByRole("combobox", { name: "Publication" }),
     ).toHaveValue("Collected Rock Tabs");
     expect(screen.getByRole("button", { name: "Book edition" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
-    expect(screen.getByRole("textbox", { name: "Edition" })).toHaveValue(
+    expect(screen.getByRole("combobox", { name: "Edition" })).toHaveValue(
       "First edition",
     );
     expect(screen.queryByRole("textbox", { name: "Volume" })).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("textbox", { name: "Issue name" }),
+      screen.queryByRole("combobox", { name: "Issue Name" }),
     ).not.toBeInTheDocument();
   });
 
@@ -269,17 +303,20 @@ describe("EditPublicationView", () => {
       <EditPublicationView publicationId="1" onCancel={vi.fn()} onSaved={onSaved} />,
     );
 
-    expect(await screen.findByRole("combobox", { name: "Magazine name" })).toHaveValue(
+    expect(await screen.findByRole("combobox", { name: "Publication" })).toHaveValue(
       "Guitar World",
+    );
+    await user.click(screen.getAllByLabelText("Clear")[1]);
+    const issueNameInput = screen.getByRole("combobox", { name: "Issue Name" });
+    await user.type(issueNameInput, "Updated Songs");
+    await user.click(
+      await screen.findByRole("option", { name: 'Add "Updated Songs"' }),
     );
     fireEvent.change(screen.getByRole("textbox", { name: "Volume" }), {
       target: { value: "13" },
     });
     fireEvent.change(screen.getByRole("textbox", { name: "Issue" }), {
       target: { value: "5" },
-    });
-    fireEvent.change(screen.getByRole("textbox", { name: "Issue name" }), {
-      target: { value: "Updated Songs" },
     });
     fireEvent.change(screen.getByLabelText("Publication date"), {
       target: { value: "1992-07-01" },
@@ -292,7 +329,7 @@ describe("EditPublicationView", () => {
     expect(mutationRequests[0]).toMatchObject({
       magInput: {
         index: {
-          id: "11",
+          id: 11,
         },
         info: {
           volume: "13",
@@ -300,7 +337,7 @@ describe("EditPublicationView", () => {
           issueName: "Updated Songs",
         },
         pubDate: "1992-07-01",
-        pubId: "1",
+        pubId: 1,
       },
     });
     expect(mutationRequests[0].magInput.transcriptions).toBeUndefined();
@@ -310,11 +347,11 @@ describe("EditPublicationView", () => {
     const user = userEvent.setup();
     const onSaved = vi.fn();
     const mutationRequests: EditMagazineIssueVariables[] = [];
-    const lookupRequests: true[] = [];
+    const lookupRequests: GetPubIndicesVariables[] = [];
     server.use(
       publicationDetailHandler(publicationDetailResults),
-      publicationIndexLookupHandler(() => {
-        lookupRequests.push(true);
+      publicationIndexLookupHandler((variables) => {
+        lookupRequests.push(variables);
       }),
       editMagazineIssueHandler((variables) => {
         mutationRequests.push(variables);
@@ -329,19 +366,24 @@ describe("EditPublicationView", () => {
       expect(lookupRequests).toHaveLength(1);
     });
     const identityInput = await screen.findByRole("combobox", {
-      name: "Magazine name",
+      name: "Publication",
     });
-    await user.click(screen.getByLabelText("Clear"));
+    await user.click(screen.getAllByLabelText("Clear")[0]);
     await user.click(identityInput);
     await user.click(
       await screen.findByRole("option", {
-        name: "Guitar for the Practicing Musician (ISSN 0748-9637)",
+        name: /Guitar for the Practicing Musician/,
       }),
     );
     expect(screen.getByRole("textbox", { name: "Serial number (ISSN)" })).toHaveValue(
       "ISSN 0748-9637",
     );
     expect(screen.getByRole("textbox", { name: "Serial number (ISSN)" })).toBeDisabled();
+    const issueNameInput = await screen.findByRole("combobox", { name: "Issue Name" });
+    await user.type(issueNameInput, "Transferred Issue");
+    await user.click(
+      await screen.findByRole("option", { name: 'Add "Transferred Issue"' }),
+    );
     await user.click(screen.getByRole("button", { name: "Save changes" }));
 
     await waitFor(() => {
@@ -350,9 +392,9 @@ describe("EditPublicationView", () => {
     expect(mutationRequests[0]).toMatchObject({
       magInput: {
         index: {
-          id: "13",
+          id: 13,
         },
-        pubId: "1",
+        pubId: 1,
       },
     });
   });
@@ -373,11 +415,22 @@ describe("EditPublicationView", () => {
       <EditPublicationView publicationId="1" onCancel={vi.fn()} onSaved={onSaved} />,
     );
 
-    fireEvent.change(await screen.findByRole("combobox", { name: "Magazine name" }), {
-      target: { value: "New Guitar Identity" },
-    });
+    await screen.findByRole("combobox", { name: "Publication" });
+    await user.click(screen.getAllByLabelText("Clear")[0]);
+    await user.type(
+      screen.getByRole("combobox", { name: "Publication" }),
+      "New Guitar Identity",
+    );
+    await user.click(
+      await screen.findByRole("option", {
+        name: 'Add "New Guitar Identity"',
+      }),
+    );
     fireEvent.change(screen.getByRole("textbox", { name: "Serial number (ISSN)" }), {
       target: { value: "ISSN 2222-3333" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "Issue Name" }), {
+      target: { value: "New Issue" },
     });
     await user.click(screen.getByRole("button", { name: "Save changes" }));
 
@@ -393,7 +446,7 @@ describe("EditPublicationView", () => {
             type: "MAG",
           },
         },
-        pubId: "1",
+        pubId: 1,
       },
     });
   });
@@ -410,15 +463,12 @@ describe("EditPublicationView", () => {
       />,
     );
 
-    fireEvent.change(await screen.findByRole("combobox", { name: "Magazine name" }), {
-      target: { value: "" },
-    });
-    fireEvent.change(screen.getByRole("textbox", { name: "Issue name" }), {
-      target: { value: "" },
-    });
+    await screen.findByRole("combobox", { name: "Publication" });
+    await user.click(screen.getAllByLabelText("Clear")[0]);
     await user.click(screen.getByRole("button", { name: "Save changes" }));
 
     expect(await screen.findByText("Magazine name is required.")).toBeInTheDocument();
+    expect(screen.getByText("Serial number is required.")).toBeInTheDocument();
     expect(
       screen.getByText("Issue name is required for magazine issues."),
     ).toBeInTheDocument();

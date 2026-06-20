@@ -1,0 +1,17 @@
+query GetPubsForIndex($pubIndexId: Long!) {
+  pubSearch(criteria: {pubIndexId: $pubIndexId}) {
+    id
+    pubDate
+    details {
+      cover
+      ... on MagDetails {
+        issueName
+        volume
+        issue
+      }
+      ... on BookDetails {
+        edition
+      }
+    }
+  }
+}

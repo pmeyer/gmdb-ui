@@ -1,0 +1,8 @@
+query GetPubIndices($pubType: PubType) {
+  getPubIndices(criteria: { type: $pubType }) {
+    id
+    name
+    type
+    serialNumber
+  }
+}

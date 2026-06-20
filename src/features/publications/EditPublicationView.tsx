@@ -16,10 +16,13 @@ import {
 import {
   buildBookInput,
   buildMagazineInput,
-  type ExistingPublicationOption,
   idToString,
   type PublicationFormState,
 } from "./publicationFormModel";
+import type {
+  ExistingPubIndexValue,
+  ExistingPubInstanceValue,
+} from "../../components/input/types";
 
 interface EditPublicationViewProps {
   publicationId: string;
@@ -40,12 +43,14 @@ function inputDateValue(value: string | null | undefined) {
 function publicationToFormState(
   publication: EditablePublication,
 ): PublicationFormState {
-  const existingPublication: ExistingPublicationOption = {
-    __typename: "PubIndexResult",
-    id: publication.pubIndexId,
+  const existingPublication: ExistingPubIndexValue = {
+    kind: "existing",
     name: publication.name,
-    serialNumber: publication.serialNumber,
-    type: publication.type,
+    identity: {
+      id: publication.pubIndexId,
+      serialNumber: publication.serialNumber,
+      type: publication.type,
+    },
   };
   const baseState = {
     coverImage: null,
@@ -59,20 +64,46 @@ function publicationToFormState(
   };
 
   if (publication.details.__typename === "MagDetails") {
+    const publicationInstance: ExistingPubInstanceValue = {
+      kind: "existing",
+      name: publication.details.issueName,
+      identity: {
+        kind: "MAG",
+        coverUrl: publication.details.cover,
+        id: publication.id,
+        issue: publication.details.issue,
+        pubDate: publication.pubDate,
+        volume: publication.details.volume,
+      },
+    };
+
     return {
       ...baseState,
       edition: "",
       issue: optionalString(publication.details.issue),
       issueName: optionalString(publication.details.issueName),
+      publicationInstance,
       volume: optionalString(publication.details.volume),
     };
   }
+
+  const publicationInstance: ExistingPubInstanceValue = {
+    kind: "existing",
+    name: publication.details.edition,
+    identity: {
+      kind: "BOOK",
+      coverUrl: publication.details.cover,
+      id: publication.id,
+      pubDate: publication.pubDate,
+    },
+  };
 
   return {
     ...baseState,
     edition: optionalString(publication.details.edition),
     issue: "",
     issueName: "",
+    publicationInstance,
     volume: "",
   };
 }

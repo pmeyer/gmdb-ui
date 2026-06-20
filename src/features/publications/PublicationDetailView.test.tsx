@@ -60,12 +60,12 @@ function publicationDetailHandler(
 const publicationDetailResults = [
   {
     __typename: "PubSearchResult",
-    id: "1",
+    id: 1,
     name: "Guitar World",
     type: "MAG",
     pubDate: "1992-06-01",
     serialNumber: "ISSN 1045-6295",
-    pubIndexId: "11",
+    pubIndexId: 11,
     details: {
       __typename: "MagDetails",
       cover: "/resources/publications/1/cover",
@@ -76,21 +76,21 @@ const publicationDetailResults = [
     transcriptions: [
       {
         __typename: "PubTranscription",
-        id: "101",
+        id: 101,
         pageNumber: 48,
         song: {
           __typename: "Song",
-          id: "201",
+          id: 201,
           title: "Little Wing",
         },
       },
       {
         __typename: "PubTranscription",
-        id: "102",
+        id: 102,
         pageNumber: 62,
         song: {
           __typename: "Song",
-          id: "202",
+          id: 202,
           title: "Barracuda",
         },
       },
@@ -98,12 +98,12 @@ const publicationDetailResults = [
   },
   {
     __typename: "PubSearchResult",
-    id: "2",
+    id: 2,
     name: "Collected Rock Tabs",
     type: "BOOK",
     pubDate: null,
     serialNumber: "ISBN 978-1-2345-6789-0",
-    pubIndexId: "12",
+    pubIndexId: 12,
     details: {
       __typename: "BookDetails",
       cover: null,
