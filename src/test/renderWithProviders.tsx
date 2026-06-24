@@ -1,6 +1,8 @@
 import type { ReactElement, ReactNode } from "react";
 import { ApolloProvider } from "@apollo/client/react";
 import { ThemeProvider } from "@mui/material/styles";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { render, type RenderOptions } from "@testing-library/react";
 
 import { createGmdbClient } from "../graphql/GmdbClient";
@@ -16,7 +18,9 @@ function createTestProviders() {
   function TestProviders({ children }: TestProvidersProps) {
     return (
       <ThemeProvider theme={theme}>
-        <ApolloProvider client={client}>{children}</ApolloProvider>
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <ApolloProvider client={client}>{children}</ApolloProvider>
+        </LocalizationProvider>
       </ThemeProvider>
     );
   }

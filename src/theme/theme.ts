@@ -1,5 +1,6 @@
 import { amber, red } from "@mui/material/colors";
 import { createTheme } from "@mui/material/styles";
+import type {} from '@mui/x-date-pickers/themeAugmentation'; 
 
 // A custom theme for this app
 const theme = createTheme({
@@ -57,6 +58,15 @@ const theme = createTheme({
     MuiFilledInput: {
       defaultProps: {
         size: 'small'
+      }
+    },
+    MuiDatePicker: {
+      defaultProps: {
+        slotProps: {
+          textField: {
+            size: 'small'
+          }
+        }
       }
     },
   },

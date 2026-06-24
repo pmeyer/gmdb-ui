@@ -12,6 +12,8 @@ import {
   ToggleButtonGroup,
   Typography,
 } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import dayjs, { type Dayjs } from "dayjs";
 
 import { PubIndexAutocomplete } from "../../components/input/PubIndexAutocomplete";
 import { ImageInput } from "../../components/input/ImageInput";
@@ -92,6 +94,24 @@ function validateForm(formState: PublicationFormState): ValidationErrors {
 
 function hasValidationErrors(errors: ValidationErrors) {
   return Object.keys(errors).length > 0;
+}
+
+function publicationDatePickerValue(value: string): Dayjs | null {
+  if (value.trim().length === 0) {
+    return null;
+  }
+
+  const parsedValue = dayjs(value);
+
+  return parsedValue.isValid() ? parsedValue : null;
+}
+
+function publicationDateFormValue(value: Dayjs | null): string {
+  if (value?.isValid() !== true) {
+    return "";
+  }
+
+  return value.format("YYYY-MM-DD");
 }
 
 export function PublicationForm({
@@ -247,6 +267,13 @@ export function PublicationForm({
     [],
   );
 
+  const handlePublicationDateChange = useCallback((nextValue: Dayjs | null) => {
+    setFormState((current) => ({
+      ...current,
+      publicationDate: publicationDateFormValue(nextValue),
+    }));
+  }, []);
+
   const handleSerialNumberChange = useCallback((nextValue: FormattedSerialNumber) => {
     setFormState((current) => ({
       ...current,
@@ -293,6 +320,10 @@ export function PublicationForm({
         ? { kind: "new", name: formState.name }
         : null),
     [formState.existingPublication, formState.name],
+  );
+  const publicationDateValue = useMemo(
+    () => publicationDatePickerValue(formState.publicationDate),
+    [formState.publicationDate],
   );
 
   return (
@@ -490,18 +521,23 @@ export function PublicationForm({
                 />
               )}
 
-              <TextField
-                helperText="Optional publication date for this issue or edition."
+              <DatePicker
+                disableFuture
+                format="MMM YYYY"
                 label="Publication date"
-                name="publicationDate"
-                onChange={handleTextFieldChange}
+                onChange={handlePublicationDateChange}
+                reduceAnimations
                 slotProps={{
-                  inputLabel: {
-                    shrink: true,
+                  field: {
+                    clearable: true,
+                  },
+                  textField: {
+                    helperText: "Optional publication date for this issue or edition.",
+                    name: "publicationDate",
                   },
                 }}
-                type="date"
-                value={formState.publicationDate}
+                value={publicationDateValue}
+                views={["year", "month"]}
               />
             </Box>
           </Stack>

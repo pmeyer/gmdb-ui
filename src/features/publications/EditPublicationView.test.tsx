@@ -1,8 +1,10 @@
 import { graphql, HttpResponse, delay } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import dayjs from "dayjs";
 
+import { selectDatePickerMonthYear } from "../../test/datePickerTestUtils";
 import { server } from "../../test/server";
 import { renderWithProviders } from "../../test/renderWithProviders";
 import { EditPublicationView } from "./EditPublicationView";
@@ -118,6 +120,17 @@ function publicationInstanceLookupHandler() {
 
     return HttpResponse.json({ data: { pubSearch: publications } });
   });
+}
+
+function getAutocompleteClearButton(name: string) {
+  const input = screen.getByRole("combobox", { name });
+  const autocomplete = input.closest(".MuiAutocomplete-root");
+
+  if (!(autocomplete instanceof HTMLElement)) {
+    throw new Error(`Autocomplete root not found for ${name}.`);
+  }
+
+  return within(autocomplete).getByLabelText("Clear");
 }
 
 function comparableId(value: unknown) {
@@ -277,7 +290,9 @@ describe("EditPublicationView", () => {
     expect(screen.getByRole("combobox", { name: "Issue Name" })).toHaveValue(
       "Summer Songs",
     );
-    expect(screen.getByLabelText("Publication date")).toHaveValue("1992-06-01");
+    expect(screen.getByRole("group", { name: "Publication date" })).toHaveTextContent(
+      "Jun 1992",
+    );
     expect(screen.getByAltText("Current Image")).toHaveAttribute(
       "src",
       "/resources/publications/1/cover",
@@ -330,7 +345,7 @@ describe("EditPublicationView", () => {
     expect(await screen.findByRole("combobox", { name: "Publication" })).toHaveValue(
       "Guitar World",
     );
-    await user.click(screen.getAllByLabelText("Clear")[1]);
+    await user.click(getAutocompleteClearButton("Issue Name"));
     const issueNameInput = screen.getByRole("combobox", { name: "Issue Name" });
     await user.type(issueNameInput, "Updated Songs");
     await user.click(
@@ -342,8 +357,10 @@ describe("EditPublicationView", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "Issue" }), {
       target: { value: "5" },
     });
-    fireEvent.change(screen.getByLabelText("Publication date"), {
-      target: { value: "1992-07-01" },
+    await selectDatePickerMonthYear(user, {
+      fieldName: "Publication date",
+      monthName: "July",
+      year: 1992,
     });
     await user.click(screen.getByRole("button", { name: "Save changes" }));
 
@@ -360,12 +377,12 @@ describe("EditPublicationView", () => {
           issue: "5",
           issueName: "Updated Songs",
         },
-        pubDate: "1992-07-01",
+        pubDate: dayjs().year(1992).month(6).format("YYYY-MM-DD"),
         pubId: 1,
       },
     });
     expect(mutationRequests[0].magInput.transcriptions).toBeUndefined();
-  }, 10000);
+  }, 25000);
 
   it("submits a different selected existing magazine identity id", async () => {
     const user = userEvent.setup();
@@ -392,7 +409,7 @@ describe("EditPublicationView", () => {
     const identityInput = await screen.findByRole("combobox", {
       name: "Publication",
     });
-    await user.click(screen.getAllByLabelText("Clear")[0]);
+    await user.click(getAutocompleteClearButton("Publication"));
     await user.click(identityInput);
     await user.click(
       await screen.findByRole("option", {
@@ -440,7 +457,7 @@ describe("EditPublicationView", () => {
     );
 
     await screen.findByRole("combobox", { name: "Publication" });
-    await user.click(screen.getAllByLabelText("Clear")[0]);
+    await user.click(getAutocompleteClearButton("Publication"));
     await user.type(
       screen.getByRole("combobox", { name: "Publication" }),
       "New Guitar Identity",
@@ -488,7 +505,7 @@ describe("EditPublicationView", () => {
     );
 
     await screen.findByRole("combobox", { name: "Publication" });
-    await user.click(screen.getAllByLabelText("Clear")[0]);
+    await user.click(getAutocompleteClearButton("Publication"));
     await user.click(screen.getByRole("button", { name: "Save changes" }));
 
     expect(await screen.findByText("Magazine name is required.")).toBeInTheDocument();

@@ -2,7 +2,9 @@ import { graphql, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import dayjs from "dayjs";
 
+import { selectDatePickerMonthYear } from "../../test/datePickerTestUtils";
 import { renderWithProviders } from "../../test/renderWithProviders";
 import { server } from "../../test/server";
 import { AddPublicationView } from "./AddPublicationView";
@@ -377,8 +379,10 @@ describe("AddPublicationView", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "Issue" }), {
       target: { value: "6" },
     });
-    fireEvent.change(screen.getByLabelText("Publication date"), {
-      target: { value: "2026-06-01" },
+    await selectDatePickerMonthYear(user, {
+      fieldName: "Publication date",
+      monthName: "June",
+      year: 2026,
     });
     const coverFile = new File(["cover image"], "summer-cover.png", {
       type: "image/png",
@@ -413,7 +417,7 @@ describe("AddPublicationView", () => {
     });
     expect(mutationRequests[0].magInput.info.cover).toBeInstanceOf(File);
     expect(mutationRequests[0].magInput.pubId).toBe(1);
-  }, 10000);
+  }, 20000);
 
   it("submits a typed new magazine identity with a custom serial number", async () => {
     const user = userEvent.setup();
@@ -522,8 +526,10 @@ describe("AddPublicationView", () => {
     await user.click(
       await screen.findByRole("option", { name: 'Add "Revised edition"' }),
     );
-    fireEvent.change(screen.getByLabelText("Publication date"), {
-      target: { value: "1989-01-15" },
+    await selectDatePickerMonthYear(user, {
+      fieldName: "Publication date",
+      monthName: "January",
+      year: 1989,
     });
     await user.click(screen.getByRole("button", { name: "Save publication" }));
 
@@ -532,7 +538,7 @@ describe("AddPublicationView", () => {
     });
     expect(mutationRequests[0]).toMatchObject({
       bookInput: {
-        pubDate: "1989-01-15",
+        pubDate: dayjs().year(1989).month(0).format("YYYY-MM-DD"),
         index: {
           id: 12,
         },
