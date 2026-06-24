@@ -5,9 +5,12 @@ import {Alert, Box, CardContent, CardMedia, Snackbar, SpeedDial, SpeedDialAction
 import {CameraAltTwoTone, DeleteTwoTone, UploadFileTwoTone} from "@mui/icons-material";
 import {ImageCapture} from "./image/ImageCapture";
 import _ from "lodash";
+import type {Breakpoint} from "@mui/material/styles";
+
+export type ImageInputWidth = number | string | Partial<Record<Breakpoint, number | string>>;
 
 export interface ImageInputProps {
-    width: number;
+    width: ImageInputWidth;
     aspectRatioName: AspectRatioNames;
     fileBaseName: string;
     emptyImagePoster?: string;
@@ -34,6 +37,11 @@ const actions: ImageAction[] = [
 ];
 
 const PREFERRED_CAMERA_COOKIE = 'gmdbPreferredCameraDeviceId';
+const DEFAULT_MEASURED_WIDTH = 320;
+
+function initialMeasuredWidth(width: ImageInputWidth): number {
+    return typeof width === 'number' ? width : DEFAULT_MEASURED_WIDTH;
+}
 
 function readPreferredCameraDeviceId(): string | undefined {
     if (typeof document === 'undefined') {
@@ -61,11 +69,13 @@ function writePreferredCameraDeviceId(deviceId: string): void {
 }
 
 export function ImageInput({width, aspectRatioName, fileBaseName, emptyImagePoster, existingImage,  image, onImageChange, disabled}: ImageInputProps) {
+    const rootRef = useRef<HTMLDivElement | null>(null);
     const [speedDialOpen, setSpeedDialOpen] = useState(false);
     const [inputSource, setInputSource] = useState<InputSource>("none");
     const [cameraCaptureEnabled, setCameraCaptureEnabled] = useState(() => isCameraCaptureSupported());
     const [cameraErrorMessage, setCameraErrorMessage] = useState<string | null>(null);
     const [preferredCameraDeviceId, setPreferredCameraDeviceId] = useState<string | undefined>(() => readPreferredCameraDeviceId());
+    const [measuredWidth, setMeasuredWidth] = useState(() => initialMeasuredWidth(width));
     const disabledRef = useRef(disabled === true);
 
     useEffect(() => {
@@ -81,8 +91,32 @@ export function ImageInput({width, aspectRatioName, fileBaseName, emptyImagePost
         }
     }, [disabled]);
 
+    useEffect(() => {
+        const element = rootRef.current;
+        if (!element || typeof ResizeObserver === 'undefined') {
+            return;
+        }
+
+        const updateMeasuredWidth = (nextWidth: number) => {
+            if (nextWidth > 0) {
+                setMeasuredWidth(Math.round(nextWidth));
+            }
+        };
+
+        updateMeasuredWidth(element.getBoundingClientRect().width);
+
+        const observer = new ResizeObserver((entries) => {
+            updateMeasuredWidth(entries[0]?.contentRect.width ?? element.getBoundingClientRect().width);
+        });
+
+        observer.observe(element);
+        return () => {
+            observer.disconnect();
+        };
+    }, []);
+
     const aspectRatio = useMemo(() => AspectRatios[aspectRatioName], [aspectRatioName]);
-    const height = useMemo(() => aspectRatio.calcHeight(width), [aspectRatio, width]);
+    const captureWidth = typeof width === 'number' ? width : measuredWidth;
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -172,9 +206,9 @@ export function ImageInput({width, aspectRatioName, fileBaseName, emptyImagePost
     }, [onImageChange]);
 
     return (
-        <Box sx={{height: 'min-content', borderWidth: '1px', borderStyle: 'solid', borderColor: t => t.palette.divider  }}>
+        <Box ref={rootRef} sx={{width, maxWidth: '100%', height: 'min-content', borderWidth: '1px', borderStyle: 'solid', borderColor: t => t.palette.divider  }}>
             {activeInputSource !== 'camera' &&
-                <CardContent sx={{width: `${width.toString()}px`, height: `${height.toString()}px`, p: '0!important', position: 'relative'}}>
+                <CardContent sx={{width: '100%', aspectRatio: aspectRatio.ratio, p: '0!important', position: 'relative'}}>
                     <CardMedia component="img" image={selectedImageUrl} alt="Current Image"
                                sx={{ objectFit: 'cover', width: '100%', height: '100%', filter: disabled ? 'grayscale(100%)' : 'none', opacity: disabled ? 0.25 : 1 }} />
                     <SpeedDial ariaLabel="Image Actions"
@@ -210,7 +244,7 @@ export function ImageInput({width, aspectRatioName, fileBaseName, emptyImagePost
                    hidden
                    onChange={e => {void handleUploadImageChange(e);}} />
             {activeInputSource === 'camera' &&
-                <ImageCapture width={width} initialAspectRatio={aspectRatioName}
+                <ImageCapture width={captureWidth} initialAspectRatio={aspectRatioName}
                                        onCapture={i => {void handleCapture(i);}} allowCameraNone
                                        initialCamera={preferredCameraDeviceId}
                                        onCameraSelected={handleCameraSelected}

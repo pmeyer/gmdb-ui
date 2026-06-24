@@ -515,7 +515,7 @@ export function PublicationForm({
             <Stack
               direction={{ xs: "column", sm: "row" }}
               spacing={2}
-              sx={{ alignItems: { xs: "flex-start", sm: "center" } }}
+              sx={{ alignItems: { xs: "stretch", sm: "center" } }}
             >
               <ImageInput
                 aspectRatioName="LARGE_FORMAT"
@@ -525,7 +525,7 @@ export function PublicationForm({
                 fileBaseName="publication-cover"
                 image={formState.coverImage}
                 onImageChange={handleCoverImageChange}
-                width={250}
+                width={{ xs: "100%", sm: 250 }}
               />
               <Typography component="p" variant="body2" sx={{ color: "text.secondary" }}>
                 {coverImageHelpText}

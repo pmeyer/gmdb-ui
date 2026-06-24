@@ -33,6 +33,7 @@ interface ImageCaptureProps {
 }
 
 const StyledVideo = styled('video')(() => ({
+    display: 'block',
     width: '100%',
     height: '100%',
     objectFit: 'cover'
@@ -48,7 +49,6 @@ export function ImageCapture({width, initialAspectRatio, initialCamera, allowAsp
     const [videoState, setVideoState] = useState<'idle' | 'loading' | 'playing'>('idle');
 
     const aspectRatio = useMemo(() => AspectRatios[aspectRatioKey], [aspectRatioKey]);
-    const height = useMemo(() => aspectRatio.calcHeight(width), [aspectRatio, width])
     const [drawerOpen, setDrawerOpen] = useState(false);
 
     const [mode, setMode] = useState<'capture' | 'preview'>('capture');
@@ -183,10 +183,10 @@ export function ImageCapture({width, initialAspectRatio, initialCamera, allowAsp
     const [container, setContainer] = useState<HTMLDivElement | null>(null);
 
     return (
-        <Box ref={setContainer} sx={{overflow: 'hidden', position: 'relative'}}>
+        <Box ref={setContainer} sx={{overflow: 'hidden', position: 'relative', width: '100%', aspectRatio: aspectRatio.ratio}}>
             <Slide in={mode=='capture'} direction="right" container={container} appear={false}>
-                <Box sx={{p: '0!important', position: 'relative'}}>
-                    <Box sx={{width: `${width.toString()}px`, height, aspectRatio: aspectRatio.ratio}}>
+                <Box sx={{p: '0!important', position: 'absolute', inset: 0}}>
+                    <Box sx={{width: '100%', height: '100%', lineHeight: 0}}>
                         <StyledVideo ref={videoRef} autoPlay playsInline muted sx={{backgroundColor: t => t.palette.grey[300]}}
                                      onPlay={handleVideoPlay} />
                     </Box>
@@ -273,7 +273,7 @@ export function ImageCapture({width, initialAspectRatio, initialCamera, allowAsp
             </Slide>
             {capturedImage !== null &&
                 <Slide in={mode=='preview'} direction="left" container={container}>
-                    <Box sx={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0}}>
+                    <Box sx={{ position: 'absolute', inset: 0}}>
                         <ImageCapturePreview capture={capturedImage} aspectRatio={aspectRatio}/>
                         <Stack direction="column-reverse" 
                             sx={{
@@ -298,6 +298,7 @@ export function ImageCapture({width, initialAspectRatio, initialCamera, allowAsp
 }
 
 const StyledCanvas = styled('canvas')(() => ({
+    display: 'block',
     width: '100%',
     height: '100%',
     objectFit: 'cover'
@@ -319,7 +320,7 @@ function ImageCapturePreview({capture, aspectRatio}: ImageCapturePreviewProps) {
     }, [capture, aspectRatio]);
 
     return (
-      <Box sx={{aspectRatio: aspectRatio.ratio}}>
+      <Box sx={{width: '100%', height: '100%', aspectRatio: aspectRatio.ratio}}>
           <StyledCanvas ref={canvasRef} sx={{objectFit: 'cover'}}/>
       </Box>
     );
