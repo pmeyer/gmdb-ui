@@ -53,7 +53,7 @@ function publicationToFormState(
     },
   };
   const baseState = {
-    coverImage: null,
+    coverImage: undefined,
     existingCoverImageUrl: publication.details.cover ?? undefined,
     existingPublication,
     kind: publication.type,

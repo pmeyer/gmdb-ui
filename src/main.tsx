@@ -2,6 +2,8 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { ApolloProvider } from "@apollo/client/react";
 import { ThemeProvider } from "@mui/material/styles";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 
 import App from "./App";
 import { gmdbClient } from "./graphql/GmdbClient";
@@ -17,9 +19,11 @@ if (rootElement === null) {
 createRoot(rootElement).render(
   <StrictMode>
     <ThemeProvider theme={theme}>
-      <ApolloProvider client={gmdbClient}>
-        <App />
-      </ApolloProvider>
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <ApolloProvider client={gmdbClient}>
+          <App />
+        </ApolloProvider>
+      </LocalizationProvider>
     </ThemeProvider>
   </StrictMode>,
 );
