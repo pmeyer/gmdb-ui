@@ -1,7 +1,7 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
-import {fileReadToUrl, AspectRatios, CapturedImage} from "../imageCapture";
+import {fileReadToUrl, AspectRatios, CapturedImage, isCameraCaptureSupported} from "../imageCapture";
 import type {FileWithDataUrl, AspectRatioNames} from "../imageCapture";
-import {Box, CardContent, CardMedia, SpeedDial, SpeedDialAction, SpeedDialIcon} from "@mui/material";
+import {Alert, Box, CardContent, CardMedia, Snackbar, SpeedDial, SpeedDialAction, SpeedDialIcon} from "@mui/material";
 import {CameraAltTwoTone, DeleteTwoTone, UploadFileTwoTone} from "@mui/icons-material";
 import {ImageCapture} from "./image/ImageCapture";
 import _ from "lodash";
@@ -24,19 +24,53 @@ interface ImageAction {
     icon: React.ReactNode;
     name: string;
     key: ImageActionKey;
-    show: (hasImage: boolean) => boolean;
+    show: (hasImage: boolean, cameraCaptureEnabled: boolean) => boolean;
 }
 
 const actions: ImageAction[] = [
     { icon: <UploadFileTwoTone />, name: 'Upload Image', key: 'upload', show: () => true },
-    { icon: <CameraAltTwoTone />, name: 'Capture Image', key: 'capture', show: () => true },
+    { icon: <CameraAltTwoTone />, name: 'Capture Image', key: 'capture', show: (_hasImage, cameraCaptureEnabled) => cameraCaptureEnabled },
     { icon: <DeleteTwoTone />, name: 'Clear Image', key: 'clear', show: (hasImage: boolean) => hasImage }
 ];
 
+const PREFERRED_CAMERA_COOKIE = 'gmdbPreferredCameraDeviceId';
+
+function readPreferredCameraDeviceId(): string | undefined {
+    if (typeof document === 'undefined') {
+        return undefined;
+    }
+
+    const cookie = document.cookie
+        .split(';')
+        .map(entry => entry.trim())
+        .find(entry => entry.startsWith(`${PREFERRED_CAMERA_COOKIE}=`));
+
+    if (cookie === undefined) {
+        return undefined;
+    }
+
+    return decodeURIComponent(cookie.substring(PREFERRED_CAMERA_COOKIE.length + 1));
+}
+
+function writePreferredCameraDeviceId(deviceId: string): void {
+    if (typeof document === 'undefined') {
+        return;
+    }
+
+    document.cookie = `${PREFERRED_CAMERA_COOKIE}=${encodeURIComponent(deviceId)}; Path=/; SameSite=Lax`;
+}
+
 export function ImageInput({width, aspectRatioName, fileBaseName, emptyImagePoster, existingImage,  image, onImageChange, disabled}: ImageInputProps) {
     const [speedDialOpen, setSpeedDialOpen] = useState(false);
-    //const [selectedImage, setSelectedImage] = useState<FileWithDataUrl|null>(null);
     const [inputSource, setInputSource] = useState<InputSource>("none");
+    const [cameraCaptureEnabled, setCameraCaptureEnabled] = useState(() => isCameraCaptureSupported());
+    const [cameraErrorMessage, setCameraErrorMessage] = useState<string | null>(null);
+    const [preferredCameraDeviceId, setPreferredCameraDeviceId] = useState<string | undefined>(() => readPreferredCameraDeviceId());
+    const disabledRef = useRef(disabled === true);
+
+    useEffect(() => {
+        disabledRef.current = disabled === true;
+    }, [disabled]);
 
     useEffect(() => {
         if (disabled === true) {
@@ -74,7 +108,9 @@ export function ImageInput({width, aspectRatioName, fileBaseName, emptyImagePost
         setSpeedDialOpen(false);
         switch (action) {
             case 'capture':
-                setInputSource("camera");
+                if (cameraCaptureEnabled) {
+                    setInputSource("camera");
+                }
                 break;
             case 'upload':
                 setInputSource("file");
@@ -84,37 +120,52 @@ export function ImageInput({width, aspectRatioName, fileBaseName, emptyImagePost
                 }
                 break;
             case 'clear':
-               // setSelectedImage(null);
                 onImageChange?.(null);
                 break;
         }
-    }, [disabled, onImageChange]);
+    }, [cameraCaptureEnabled, disabled, onImageChange]);
+
+    const handleCameraError = useCallback((error: Error) => {
+        setCameraCaptureEnabled(false);
+        setInputSource('none');
+        setSpeedDialOpen(false);
+        setCameraErrorMessage(error.message);
+    }, []);
+
+    const handleCameraSelected = useCallback((deviceId: string) => {
+        setPreferredCameraDeviceId(deviceId);
+        writePreferredCameraDeviceId(deviceId);
+    }, []);
 
     const handleCapture = useCallback(async (capturedImage: CapturedImage) => {
         try {
             const imageFile = await capturedImage.toFile(fileBaseName, aspectRatio);
-            //setSelectedImage(imageFile);
-            onImageChange?.(imageFile);
+            if (!disabledRef.current) {
+                onImageChange?.(imageFile);
+            }
         } catch(err) {
-            console.error(err);
+            const error = err instanceof Error
+                ? err
+                : new Error('Unable to use the captured image');
+            handleCameraError(error);
         } finally {
             capturedImage.close();
             setInputSource('none');
         }
-    }, [aspectRatio, fileBaseName, onImageChange]);
+    }, [aspectRatio, fileBaseName, handleCameraError, onImageChange]);
 
     const handleUploadImageChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-        console.log('[II] Image Change from Upload: ', e);
         const file = _(e.currentTarget.files).first();
         if (!file) {
             return;
         }
         try {
             const imageFile = await fileReadToUrl(file);
-            //setSelectedImage(imageFile);
-            onImageChange?.(imageFile);
-        } catch(err) {
-            console.error(err);
+            if (!disabledRef.current) {
+                onImageChange?.(imageFile);
+            }
+        } catch {
+            // Keep the existing image unchanged when the local file cannot be read.
         } finally {
             setInputSource('none')
         }
@@ -134,7 +185,7 @@ export function ImageInput({width, aspectRatioName, fileBaseName, emptyImagePost
                                onOpen={() => {setSpeedDialOpen(true);}}
                                onClose={() => {setSpeedDialOpen(false);}}
                     >
-                        {actions.filter(a => a.show(hasImage)).map((action) => (
+                        {actions.filter(a => a.show(hasImage, cameraCaptureEnabled)).map((action) => (
                             <SpeedDialAction
                                 key={action.name}
                                 icon={action.icon}
@@ -156,13 +207,25 @@ export function ImageInput({width, aspectRatioName, fileBaseName, emptyImagePost
                    name="img-upload"
                    type="file"
                    accept="image/*"
-                   capture="environment"
                    hidden
                    onChange={e => {void handleUploadImageChange(e);}} />
             {activeInputSource === 'camera' &&
                 <ImageCapture width={width} initialAspectRatio={aspectRatioName}
                                        onCapture={i => {void handleCapture(i);}} allowCameraNone
-                                        onClose={() => {setInputSource("none");}}/>}
+                                       initialCamera={preferredCameraDeviceId}
+                                       onCameraSelected={handleCameraSelected}
+                                       onError={handleCameraError}
+                                       onClose={() => {setInputSource("none");}}/>}
+            <Snackbar
+                anchorOrigin={{horizontal: 'center', vertical: 'bottom'}}
+                autoHideDuration={6000}
+                open={cameraErrorMessage !== null}
+                onClose={() => {setCameraErrorMessage(null);}}
+            >
+                <Alert severity="warning" variant="filled" onClose={() => {setCameraErrorMessage(null);}}>
+                    {cameraErrorMessage ?? 'Camera capture is unavailable. Use image upload instead.'}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 }

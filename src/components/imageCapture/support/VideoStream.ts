@@ -7,7 +7,6 @@ async function getVideoStream(deviceId?: string): Promise<MediaStream> {
             deviceId
         }
     };
-    console.log(`Getting Video Stream [${deviceId ?? 'default'}] with constraints: ${JSON.stringify(constraints)}`);
     return navigator.mediaDevices.getUserMedia(constraints);
 }
 
@@ -77,9 +76,7 @@ export class VideoStream {
             return Promise.resolve();
         }
         try {
-            console.log(`[VS] Setting Video Track constraints: ${JSON.stringify(constraints)}`);
             await this._videoTrack.applyConstraints(constraints);
-            console.log(`[VS] Track constraints applied successfully.`);
         } finally {
             this._constraints = this._videoTrack.getConstraints();
             this._settings = this._videoTrack.getSettings();
@@ -118,7 +115,6 @@ export class VideoStream {
     }
 
     stop() {
-        console.log(`[VS] Stopping Video Stream: ${this.toString()}`);
         this._videoTrack?.removeEventListener('ended', this._handleTrackEnded);
         stopVideoStream(this._stream);
         this._stream = null;

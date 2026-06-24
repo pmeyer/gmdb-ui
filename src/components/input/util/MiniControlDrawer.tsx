@@ -11,13 +11,14 @@ import {SemiTransparentZoomFab} from "./ZoomFab";
 export interface MiniControlDrawerProps extends Pick<StackProps, 'direction' | 'spacing'> {
     open: boolean
     onToggle: (reason:'button') => void
+    keepMounted?: boolean
     toggleTooltip?: ReactNode
     toggleIcon?: ReactNode
     toggleLabel: string
     children?: ReactNode
 }
 
-export function MiniControlDrawer({ open, onToggle, toggleTooltip, toggleIcon, toggleLabel, direction, spacing, children}: MiniControlDrawerProps) {
+export function MiniControlDrawer({ open, onToggle, keepMounted, toggleTooltip, toggleIcon, toggleLabel, direction, spacing, children}: MiniControlDrawerProps) {
     const drawerId = useId();
     const theme = useTheme();
 
@@ -47,7 +48,7 @@ export function MiniControlDrawer({ open, onToggle, toggleTooltip, toggleIcon, t
 
     return (
         <Stack ref={setContainer} direction="row"
-               sx={{position: 'relative', alignItems: 'flex-start', width: '100%', 
+               sx={{position: 'relative', alignItems: 'flex-start', width: '100%', minWidth: '0',
                     minHeight: minimumHeight, overflow: 'hidden', ...borderRadiusSx}}>
             <Tooltip title={!open ? (toggleTooltip) : undefined} placement="right">
                 <SemiTransparentZoomFab aria-label={toggleLabel}
@@ -62,8 +63,8 @@ export function MiniControlDrawer({ open, onToggle, toggleTooltip, toggleIcon, t
                 </SemiTransparentZoomFab>
             </Tooltip>
             {/* Sliding tray for content */}
-            <Slide direction="right" in={open} container={container} mountOnEnter unmountOnExit>
-                <Stack id={drawerId} spacing={spacing ?? 1} direction={direction ?? 'column'} sx={{width: '100%', ...containerSx}}>
+            <Slide direction="right" in={open} container={container} mountOnEnter={!keepMounted} unmountOnExit={!keepMounted}>
+                <Stack id={drawerId} spacing={spacing ?? 1} direction={direction ?? 'column'} sx={{width: '100%', minWidth: 0, ...containerSx}}>
                     {children}
                 </Stack>
             </Slide>

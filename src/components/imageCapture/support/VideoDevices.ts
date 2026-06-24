@@ -1,19 +1,36 @@
 import {stopVideoStream} from "./Utilities";
 
+export function isCameraCaptureSupported(): boolean {
+    const { mediaDevices } = globalThis.navigator as Partial<Pick<Navigator, 'mediaDevices'>>;
+
+    return mediaDevices !== undefined &&
+        typeof mediaDevices.getUserMedia === 'function' &&
+        typeof mediaDevices.enumerateDevices === 'function' &&
+        typeof globalThis.ImageCapture === 'function' &&
+        typeof globalThis.createImageBitmap === 'function';
+}
+
+function getMediaDevices(): MediaDevices {
+    const { mediaDevices } = globalThis.navigator as Partial<Pick<Navigator, 'mediaDevices'>>;
+
+    if (!isCameraCaptureSupported() || mediaDevices === undefined) {
+        throw new Error('Camera capture is not supported by this browser');
+    }
+
+    return mediaDevices;
+}
+
 async function getVideoDevices() {
-    console.log('[VD] Enumerating video devices');
+    const mediaDevices = getMediaDevices();
     let defaultStream: MediaStream | null = null;
     try {
-        defaultStream = await navigator.mediaDevices.getUserMedia({ video: true });
-        const devices = await navigator.mediaDevices.enumerateDevices();
+        defaultStream = await mediaDevices.getUserMedia({ video: true });
+        const devices = await mediaDevices.enumerateDevices();
         return devices
             .filter(mdi => {
-                const isInputDevice = typeof InputDeviceInfo !== 'undefined' && mdi instanceof InputDeviceInfo;
-                console.log(`[VD]   >> Found Media Device: ${JSON.stringify(mdi)} (${isInputDevice ? 'InputDeviceInfo' : 'MediaDeviceInfo'})`);
                 return mdi.kind === 'videoinput';
             });
     } finally {
-        console.log('[VD] Finished enumerating video devices; stopping default stream');
         stopVideoStream(defaultStream);
     }
 }
@@ -22,24 +39,25 @@ type VideoDeviceState = 'none' | 'initializing' | 'ready';
 
 let state: VideoDeviceState = 'none';
 let devicesPromise: Promise<MediaDeviceInfo[]> | null = null;
+let cachedDevices: MediaDeviceInfo[] | null = null;
 let isWatchingDeviceChanges = false;
 const deviceChangeListeners = new Set<() => void>();
 
 function loadDevices(): Promise<MediaDeviceInfo[]> {
-    console.log('[VD] VideoDevices initializing...');
     state = 'initializing';
 
     const pendingDevices = getVideoDevices()
         .then((devices) => {
             if (devicesPromise === pendingDevices) {
                 state = 'ready';
-                console.log('[VD] VideoDevices initialized');
+                cachedDevices = devices;
             }
             return devices;
         }, (reason: unknown) => {
             if (devicesPromise === pendingDevices) {
                 state = 'none';
                 devicesPromise = null;
+                cachedDevices = null;
             }
             throw reason instanceof Error
                 ? reason
@@ -73,8 +91,15 @@ function watchDeviceChanges() {
         return;
     }
 
-    navigator.mediaDevices.addEventListener('devicechange', () => {
+    const { mediaDevices } = globalThis.navigator as Partial<Pick<Navigator, 'mediaDevices'>>;
+    if (mediaDevices === undefined || typeof mediaDevices.addEventListener !== 'function') {
+        isWatchingDeviceChanges = true;
+        return;
+    }
+
+    mediaDevices.addEventListener('devicechange', () => {
         devicesPromise = null;
+        cachedDevices = null;
         state = 'none';
         deviceChangeListeners.forEach(listener => { listener(); });
     });
@@ -87,10 +112,6 @@ function getDevices(abortSignal?: AbortSignal): Promise<MediaDeviceInfo[]> {
     }
 
     watchDeviceChanges();
-
-    if (devicesPromise !== null) {
-        console.log(`[VD] VideoDevices is already ${state}`);
-    }
 
     return waitForDevices(devicesPromise ?? loadDevices(), abortSignal);
 }
@@ -111,6 +132,7 @@ function subscribe(listener: () => void): () => void {
 
 export const VideoDevices = {
     getDevices,
+    getCachedDevices: () => cachedDevices,
     refreshDevices,
     subscribe,
     get state() {

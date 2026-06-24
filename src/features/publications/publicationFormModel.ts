@@ -8,6 +8,7 @@ import type {
   ExistingPubIndexValue,
   PubInstanceValue,
 } from "../../components/input/types";
+import type { FileWithDataUrl } from "../../components/imageCapture";
 
 export type PublicationFormKind = PubType;
 export type PublicationSourceMode = "EXISTING" | "NEW";
@@ -24,7 +25,7 @@ export interface PublicationFormState {
   issueName: string;
   edition: string;
   publicationDate: string;
-  coverImage: File | null;
+  coverImage: FileWithDataUrl | null | undefined;
   existingCoverImageUrl?: string;
 }
 
@@ -45,7 +46,7 @@ export const initialPublicationFormState: PublicationFormState = {
   issueName: "",
   edition: "",
   publicationDate: "",
-  coverImage: null,
+  coverImage: undefined,
 };
 
 export function trimmedValue(value: string) {
@@ -91,7 +92,7 @@ export function buildMagazineInput(
   return {
     index: buildIndexInput(formState),
     info: {
-      cover: formState.coverImage ?? undefined,
+      cover: formState.coverImage?.file ?? undefined,
       issue: trimmedValue(formState.issue),
       issueName: trimmedValue(formState.issueName) ?? "",
       volume: trimmedValue(formState.volume),
@@ -114,7 +115,7 @@ export function buildBookInput(
   return {
     index: buildIndexInput(formState),
     info: {
-      cover: formState.coverImage ?? undefined,
+      cover: formState.coverImage?.file ?? undefined,
       edition: trimmedValue(formState.edition) ?? "",
     },
     pubDate: trimmedValue(formState.publicationDate),

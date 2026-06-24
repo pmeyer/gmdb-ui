@@ -23,10 +23,13 @@ import type {VideoDeviceChangeHandler} from "./VideoDeviceDropDown";
 interface ImageCaptureProps {
     width: number;
     initialAspectRatio: AspectRatioNames;
+    initialCamera?: string | MediaDeviceInfo;
     allowAspectRatioChange?: boolean;
     allowCameraNone?: boolean;
     onCapture: (capture: CapturedImage) => void;
+    onCameraSelected?: (deviceId: string) => void;
     onClose?: () => void;
+    onError?: (error: Error) => void;
 }
 
 const StyledVideo = styled('video')(() => ({
@@ -35,11 +38,11 @@ const StyledVideo = styled('video')(() => ({
     objectFit: 'cover'
 }));
 
-export function ImageCapture({width, initialAspectRatio, allowAspectRatioChange, allowCameraNone, onCapture, onClose}: ImageCaptureProps) {
+export function ImageCapture({width, initialAspectRatio, initialCamera, allowAspectRatioChange, allowCameraNone, onCapture, onCameraSelected, onClose, onError}: ImageCaptureProps) {
     const aspectRatioLabelId = useId();
-    const {cameraDevices, status: cameraDevicesStatus} = useMediaDeviceInfos();
+    const {cameraDevices, message: cameraDevicesMessage, status: cameraDevicesStatus} = useMediaDeviceInfos();
     const [videoStream, setVideoStream] = useState<VideoStream|null>(null);
-    const {takePhoto, takeResult, status: captureState} = useImageCapture(videoStream);
+    const {takePhoto, takeResult, status: captureState, error: captureError} = useImageCapture(videoStream);
 
     const [aspectRatioKey, setAspectRatioKey] = useState<AspectRatioNames>(initialAspectRatio);
     const [videoState, setVideoState] = useState<'idle' | 'loading' | 'playing'>('idle');
@@ -54,42 +57,38 @@ export function ImageCapture({width, initialAspectRatio, allowAspectRatioChange,
     const videoRef = useRef<HTMLVideoElement>(null);
 
     const setVideoElementSource = useCallback((vs: VideoStream | null) => {
-        console.log(`[ICC] Setting Video Source: ${vs?.toString() ?? 'null'}`);
         const mediaStream = vs?.stream ?? null;
         if (videoRef.current && videoRef.current.srcObject !== mediaStream) {
             videoRef.current.srcObject = mediaStream;
-            console.log(`[ICC] Video Source Set: ${mediaStream ? mediaStream.id : 'null'}`)
             setVideoState(mediaStream ? 'loading' : 'idle');
         }
     }, []);
 
     const handleCameraDeviceChange = useCallback<VideoDeviceChangeHandler>(async (device, selectionKind ) => {
-        console.log(`[ICC] Camera Device Changed: ${device?.deviceId ?? 'null'}`);
-
         let vs: VideoStream | null = null;
         if (device) {
             setVideoState('loading');
             try {
                 vs = await VideoStream.forDevice(device);
-                console.log(`[ICC] Requesting aspect ratio: ${aspectRatio.commonName}`);
                 await vs.setMaxWidth(aspectRatio);
-                console.log(`[ICC] Aspect ratio set`);
-                console.log(`[ICC] Requesting image capture to prime the video stream`);
                 await vs.getImageCapture().takePhoto();
             } catch(reason: unknown) {
                 const error = reason instanceof Error
                     ? reason
                     : new Error('Unable to initialize video stream');
-                console.error('[ICC] Failed to initialize video stream:', error);
                 vs?.stop();
                 setVideoState(videoStream ? 'playing' : 'idle');
+                onError?.(error);
                 throw error;
             }
         }
         setVideoElementSource(vs);
         setVideoStream(vs);
-        setDrawerOpen(selectionKind === 'initial');
-    }, [aspectRatio, setVideoElementSource, videoStream]);
+        if (device?.deviceId) {
+            onCameraSelected?.(device.deviceId);
+        }
+        setDrawerOpen(selectionKind === 'initial' && device === null);
+    }, [aspectRatio, onCameraSelected, onError, setVideoElementSource, videoStream]);
 
     const handleAspectRatioChange = useCallback(async (newAspectRatio: AspectRatioNames) => {
         const nextAspectRatio = AspectRatios[newAspectRatio];
@@ -107,11 +106,14 @@ export function ImageCapture({width, initialAspectRatio, allowAspectRatioChange,
             await videoStream.setMaxWidth(nextAspectRatio);
             setAspectRatioKey(newAspectRatio);
         } catch (reason: unknown) {
-            console.error('[ICC] Failed to change aspect ratio:', reason);
+            const error = reason instanceof Error
+                ? reason
+                : new Error('Unable to change camera aspect ratio');
+            onError?.(error);
         } finally {
             setVideoState(previousVideoState);
         }
-    }, [videoState, videoStream]);
+    }, [onError, videoState, videoStream]);
 
     const handleVideoPlay = useCallback<ReactEventHandler<HTMLVideoElement>>(() => {
         setVideoState('playing');
@@ -120,7 +122,6 @@ export function ImageCapture({width, initialAspectRatio, allowAspectRatioChange,
     const handleCameraClick = useCallback(async () => {
         const capture = await takePhoto();
         if (capture !== null) {
-            //onCapture(capture);
             setCapturedImage(capture);
             setMode('preview');
         }
@@ -135,16 +136,29 @@ export function ImageCapture({width, initialAspectRatio, allowAspectRatioChange,
     }, [onCapture, takeResult]);
 
     useEffect(() => {
-        console.log("[ICC] VideoStream changed: ", videoStream?.toString() ?? "null");
-
         return () => {
-            console.log("[ICC] VideoStream cleanup: ", videoStream?.toString() ?? "null");
             videoStream?.stop();
         }
     }, [videoStream]);
 
     useEffect(() => {
-        console.log(`[ICC] Mode Changed: ${mode}`);
+        if (cameraDevicesStatus === 'error') {
+            onError?.(new Error(cameraDevicesMessage || 'Unable to access camera devices'));
+            return;
+        }
+
+        if (cameraDevicesStatus === 'complete' && cameraDevices.length === 0) {
+            onError?.(new Error('No camera devices are available'));
+        }
+    }, [cameraDevices.length, cameraDevicesMessage, cameraDevicesStatus, onError]);
+
+    useEffect(() => {
+        if (captureState === 'error' && captureError !== null) {
+            onError?.(captureError);
+        }
+    }, [captureError, captureState, onError]);
+
+    useEffect(() => {
         const video = videoRef.current;
         if (!video) {
             return;
@@ -158,10 +172,13 @@ export function ImageCapture({width, initialAspectRatio, allowAspectRatioChange,
         if (video.srcObject !== null) {
             void video.play()
                 .catch((reason: unknown) => {
-                    console.error('[ICC] Failed to resume video playback:', reason);
+                    const error = reason instanceof Error
+                        ? reason
+                        : new Error('Unable to resume camera preview');
+                    onError?.(error);
                 });
         }
-    }, [mode])
+    }, [mode, onError])
 
     const [container, setContainer] = useState<HTMLDivElement | null>(null);
 
@@ -171,7 +188,6 @@ export function ImageCapture({width, initialAspectRatio, allowAspectRatioChange,
                 <Box sx={{p: '0!important', position: 'relative'}}>
                     <Box sx={{width: `${width.toString()}px`, height, aspectRatio: aspectRatio.ratio}}>
                         <StyledVideo ref={videoRef} autoPlay playsInline muted sx={{backgroundColor: t => t.palette.grey[300]}}
-                                     // poster={!videoStream ? GuitarSvg : undefined}
                                      onPlay={handleVideoPlay} />
                     </Box>
                     <Stack direction="column" 
@@ -185,6 +201,7 @@ export function ImageCapture({width, initialAspectRatio, allowAspectRatioChange,
                             <MiniControlDrawer
                                 spacing={2}
                                 open={drawerOpen}
+                                keepMounted
                                 toggleIcon={<VideoSettingsTwoTone />}
                                 toggleTooltip={!drawerOpen ? (<>
                                     <div>Camera: {(videoStream?.label ?? 'None')}</div>
@@ -195,6 +212,7 @@ export function ImageCapture({width, initialAspectRatio, allowAspectRatioChange,
 
                                 <VideoDeviceDropDown cameraDevices={cameraDevices}
                                                      allowCameraNone={allowCameraNone}
+                                                     initialCamera={initialCamera}
                                                      disabled={videoState === 'loading' || cameraDevicesStatus !== 'complete' || captureState === 'busy'}
                                                      onCameraChange={handleCameraDeviceChange}
                                                      />

@@ -7,6 +7,45 @@ import { renderWithProviders } from "../../test/renderWithProviders";
 import { server } from "../../test/server";
 import { AddPublicationView } from "./AddPublicationView";
 
+interface MockImageInputProps {
+  emptyImagePoster?: string;
+  existingImage?: string;
+  image?: { dataUrl: string; file: File } | null;
+  onImageChange?: (image: { dataUrl: string; file: File } | null) => void;
+}
+
+vi.mock("../../components/input/ImageInput", () => ({
+  ImageInput: function MockImageInput({
+    emptyImagePoster,
+    existingImage,
+    image,
+    onImageChange,
+  }: MockImageInputProps) {
+    const imageUrl = image === undefined
+      ? existingImage ?? emptyImagePoster
+      : image?.dataUrl ?? emptyImagePoster;
+
+    return (
+      <div>
+        <img alt="Current Image" src={imageUrl} />
+        <input
+          aria-label="Cover image file"
+          onChange={(event) => {
+            const file = event.currentTarget.files?.[0];
+
+            onImageChange?.(
+              file === undefined
+                ? null
+                : { dataUrl: `data:${file.type};mock`, file },
+            );
+          }}
+          type="file"
+        />
+      </div>
+    );
+  },
+}));
+
 interface GetPubIndicesVariables {
   pubType?: string;
 }
@@ -209,6 +248,10 @@ async function chooseNewPublication(name: string) {
   return user;
 }
 
+function getCoverImageInput(): HTMLInputElement {
+  return screen.getByLabelText("Cover image file");
+}
+
 describe("AddPublicationView", () => {
   beforeEach(() => {
     server.use(publicationInstanceLookupHandler());
@@ -337,6 +380,18 @@ describe("AddPublicationView", () => {
     fireEvent.change(screen.getByLabelText("Publication date"), {
       target: { value: "2026-06-01" },
     });
+    const coverFile = new File(["cover image"], "summer-cover.png", {
+      type: "image/png",
+    });
+    fireEvent.change(getCoverImageInput(), {
+      target: { files: [coverFile] },
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText("Current Image")).toHaveAttribute(
+        "src",
+        expect.stringContaining("data:image/png"),
+      );
+    });
     await user.click(screen.getByRole("button", { name: "Save publication" }));
 
     await waitFor(() => {
@@ -356,8 +411,9 @@ describe("AddPublicationView", () => {
         transcriptions: [],
       },
     });
+    expect(mutationRequests[0].magInput.info.cover).toBeInstanceOf(File);
     expect(mutationRequests[0].magInput.pubId).toBe(1);
-  });
+  }, 10000);
 
   it("submits a typed new magazine identity with a custom serial number", async () => {
     const user = userEvent.setup();

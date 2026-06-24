@@ -14,8 +14,11 @@ import {
 } from "@mui/material";
 
 import { PubIndexAutocomplete } from "../../components/input/PubIndexAutocomplete";
+import { ImageInput } from "../../components/input/ImageInput";
 import { PubIndexSerialNumberInput } from "../../components/input/PubIndexSerialNumberInput";
 import { PubInstanceInput } from "../../components/input/PubInstanceInput";
+import type { FileWithDataUrl } from "../../components/imageCapture";
+import coverImagePlaceholderUrl from "../../assets/cover-img-placeholder.png";
 import type {
   PubIndexAutocompleteValue,
   PubInstanceValue,
@@ -119,7 +122,7 @@ export function PublicationForm({
 
       setFormState((current) => ({
         ...current,
-        coverImage: null,
+        coverImage: undefined,
         edition: "",
         existingCoverImageUrl: undefined,
         existingPublication: null,
@@ -142,7 +145,7 @@ export function PublicationForm({
       if (nextIdentity?.kind === "existing") {
         setFormState((current) => ({
           ...current,
-          coverImage: null,
+          coverImage: undefined,
           edition: "",
           existingCoverImageUrl: undefined,
           existingPublication: nextIdentity,
@@ -168,7 +171,7 @@ export function PublicationForm({
 
         return {
           ...current,
-          coverImage: identityIsUnchanged ? current.coverImage : null,
+          coverImage: identityIsUnchanged ? current.coverImage : undefined,
           edition: identityIsUnchanged ? current.edition : "",
           existingCoverImageUrl: identityIsUnchanged
             ? current.existingCoverImageUrl
@@ -198,7 +201,7 @@ export function PublicationForm({
 
           return {
             ...current,
-            coverImage: null,
+            coverImage: undefined,
             edition: identity.kind === "BOOK" ? nextInstance.name : "",
             existingCoverImageUrl: identity.coverUrl ?? undefined,
             issue: identity.kind === "MAG" ? identity.issue ?? "" : "",
@@ -251,15 +254,12 @@ export function PublicationForm({
     }));
   }, []);
 
-  const handleCoverImageChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      setFormState((current) => ({
-        ...current,
-        coverImage: event.target.files?.[0] ?? null,
-      }));
-    },
-    [],
-  );
+  const handleCoverImageChange = useCallback((nextImage: FileWithDataUrl | null) => {
+    setFormState((current) => ({
+      ...current,
+      coverImage: nextImage,
+    }));
+  }, []);
 
   const handleSubmit = useCallback(
     (event: SyntheticEvent<HTMLFormElement>) => {
@@ -281,6 +281,11 @@ export function PublicationForm({
   const isEditMode = mode === "edit";
   const isExistingIdentity =
     formState.sourceMode === "EXISTING" && formState.existingPublication !== null;
+  const coverImageHelpText =
+    formState.coverImage?.file.name ??
+    (isEditMode && formState.existingCoverImageUrl !== undefined
+      ? "Current catalog cover is retained unless a replacement image is selected."
+      : "Optional cover image.");
   const identityValue = useMemo<PubIndexAutocompleteValue | null>(
     () =>
       formState.existingPublication ??
@@ -509,23 +514,21 @@ export function PublicationForm({
             </Typography>
             <Stack
               direction={{ xs: "column", sm: "row" }}
-              spacing={1.5}
-              sx={{ alignItems: { xs: "stretch", sm: "center" } }}
+              spacing={2}
+              sx={{ alignItems: { xs: "flex-start", sm: "center" } }}
             >
-              <Button component="label" type="button" variant="outlined">
-                Choose cover image
-                <input
-                  accept="image/*"
-                  hidden
-                  onChange={handleCoverImageChange}
-                  type="file"
-                />
-              </Button>
+              <ImageInput
+                aspectRatioName="LARGE_FORMAT"
+                disabled={isSaving}
+                emptyImagePoster={coverImagePlaceholderUrl}
+                existingImage={formState.existingCoverImageUrl}
+                fileBaseName="publication-cover"
+                image={formState.coverImage}
+                onImageChange={handleCoverImageChange}
+                width={250}
+              />
               <Typography component="p" variant="body2" sx={{ color: "text.secondary" }}>
-                {formState.coverImage?.name ??
-                  (isEditMode && formState.existingCoverImageUrl !== undefined
-                    ? "Current cover image will be retained unless replaced."
-                    : "Optional cover image. Cropping and editing are handled outside this form.")}
+                {coverImageHelpText}
               </Typography>
             </Stack>
           </Stack>

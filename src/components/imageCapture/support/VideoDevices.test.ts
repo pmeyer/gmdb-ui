@@ -38,6 +38,8 @@ function installMediaDevices(devices: MediaDeviceInfo[] = [createDevice("one")])
     getUserMedia: vi.fn().mockResolvedValue(createStream().stream),
   };
   vi.stubGlobal("navigator", { mediaDevices });
+  vi.stubGlobal("ImageCapture", vi.fn());
+  vi.stubGlobal("createImageBitmap", vi.fn());
 
   return {
     mediaDevices,
@@ -67,8 +69,11 @@ describe("VideoDevices", () => {
     const firstRequest = videoDevices.getDevices();
     const secondRequest = videoDevices.getDevices();
 
+    expect(videoDevices.getCachedDevices()).toBeNull();
     await expect(firstRequest).resolves.toEqual([expect.objectContaining({ deviceId: "one" })]);
     await expect(secondRequest).resolves.toEqual([expect.objectContaining({ deviceId: "one" })]);
+    expect(videoDevices.getCachedDevices()).toEqual([expect.objectContaining({ deviceId: "one" })]);
+    await expect(videoDevices.getDevices()).resolves.toEqual([expect.objectContaining({ deviceId: "one" })]);
     expect(mediaDevices.getUserMedia).toHaveBeenCalledOnce();
     expect(mediaDevices.enumerateDevices).toHaveBeenCalledOnce();
     expect(videoDevices.state).toBe("ready");
@@ -98,6 +103,7 @@ describe("VideoDevices", () => {
     signalDeviceChange();
 
     expect(videoDevices.state).toBe("none");
+    expect(videoDevices.getCachedDevices()).toBeNull();
     expect(listener).toHaveBeenCalledOnce();
     await expect(videoDevices.getDevices()).resolves.toEqual([
       expect.objectContaining({ deviceId: "two" }),
@@ -120,6 +126,28 @@ describe("VideoDevices", () => {
     await expect(videoDevices.getDevices()).resolves.toHaveLength(1);
     expect(mediaDevices.getUserMedia).toHaveBeenCalledTimes(2);
     expect(videoDevices.state).toBe("ready");
+  });
+
+  it("rejects without throwing synchronously when media devices are unsupported", async () => {
+    vi.stubGlobal("navigator", {});
+    const videoDevices = await loadVideoDevices();
+
+    await expect(videoDevices.getDevices()).rejects.toThrow(
+      "Camera capture is not supported by this browser",
+    );
+    expect(videoDevices.state).toBe("none");
+  });
+
+  it("requires still-capture helpers for camera capture support", async () => {
+    const { mediaDevices } = installMediaDevices();
+    vi.stubGlobal("ImageCapture", undefined);
+    vi.stubGlobal("createImageBitmap", undefined);
+    const videoDevices = await loadVideoDevices();
+
+    await expect(videoDevices.getDevices()).rejects.toThrow(
+      "Camera capture is not supported by this browser",
+    );
+    expect(mediaDevices.getUserMedia).not.toHaveBeenCalled();
   });
 
   it("rejects an already-aborted request without enumerating", async () => {

@@ -7,11 +7,24 @@ export interface UseMediaDeviceInfosReturn {
     cameraDevices: MediaDeviceInfo[]
 }
 
+function completeState(devices: MediaDeviceInfo[]): UseMediaDeviceInfosReturn {
+    return {
+        status: 'complete',
+        message: devices.length === 0
+            ? 'No cameras available'
+            : `Found ${devices.length.toString()} camera(s)`,
+        cameraDevices: devices,
+    };
+}
+
+function loadingState(): UseMediaDeviceInfosReturn {
+    return { status: 'loading', message: '', cameraDevices: [] };
+}
+
 export function useMediaDeviceInfos(): UseMediaDeviceInfosReturn {
-    const [state, setState] = useState<UseMediaDeviceInfosReturn>({
-        status: 'loading',
-        message: '',
-        cameraDevices: [],
+    const [state, setState] = useState<UseMediaDeviceInfosReturn>(() => {
+        const cachedDevices = VideoDevices.getCachedDevices();
+        return cachedDevices === null ? loadingState() : completeState(cachedDevices);
     });
 
     useEffect(() => {
@@ -21,7 +34,9 @@ export function useMediaDeviceInfos(): UseMediaDeviceInfosReturn {
             currentController?.abort();
             const controller = new AbortController();
             currentController = controller;
-            setState({ status: 'loading', message: '', cameraDevices: [] });
+
+            const cachedDevices = VideoDevices.getCachedDevices();
+            setState(cachedDevices === null ? loadingState() : completeState(cachedDevices));
 
             void VideoDevices.getDevices(controller.signal)
                 .then((devices) => {
@@ -29,13 +44,7 @@ export function useMediaDeviceInfos(): UseMediaDeviceInfosReturn {
                         return;
                     }
 
-                    setState({
-                        status: 'complete',
-                        message: devices.length === 0
-                            ? 'No cameras available'
-                            : `Found ${devices.length.toString()} camera(s)`,
-                        cameraDevices: devices,
-                    });
+                    setState(completeState(devices));
                 })
                 .catch((reason: unknown) => {
                     if (controller.signal.aborted) {

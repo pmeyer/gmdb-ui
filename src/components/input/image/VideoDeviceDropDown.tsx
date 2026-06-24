@@ -37,8 +37,7 @@ export function VideoDeviceDropDown({cameraDevices, initialCamera, disabled, all
                 await onCameraChange(selCam, selectionKind);
             }
             return {succeeded: true, camera: selCam};
-        } catch (reason: unknown) {
-            console.error(`[VDDD] Camera Selection Failed (${selectionKind ?? 'unknown'}):`, reason);
+        } catch {
             return {succeeded: false};
         }
     }, [cameraMap, onCameraChange]);
@@ -53,7 +52,6 @@ export function VideoDeviceDropDown({cameraDevices, initialCamera, disabled, all
     useEffect(() => {
         if (!initCameraSelected.current) {
             if (cameraDevices.length === 0) {
-                console.warn('[VDDD] No Camera Devices Found');
                 return;
             }
 
@@ -61,9 +59,17 @@ export function VideoDeviceDropDown({cameraDevices, initialCamera, disabled, all
                 ? initialCamera
                 : initialCamera?.deviceId;
 
-            const initCamera = initCameraId && cameraMap.has(initCameraId)
-                ? initCameraId
-                : (allowCameraNone ? '' : cameraDevices[0].deviceId);
+            const initCamera = (() => {
+                if (initCameraId && cameraMap.has(initCameraId)) {
+                    return initCameraId;
+                }
+
+                if (cameraDevices.length === 1 || allowCameraNone !== true) {
+                    return cameraDevices[0].deviceId;
+                }
+
+                return '';
+            })();
 
             initCameraSelected.current = true;
             void requestCameraChange(initCamera, 'initial')
@@ -73,7 +79,6 @@ export function VideoDeviceDropDown({cameraDevices, initialCamera, disabled, all
                         return;
                     }
                     setSelectedCamera(result.camera);
-                    console.log(`[VDDD] Initial Camera Selection Complete: ${cameraMap.get(initCamera)?.label ?? 'None'}`);
                 });
             return;
         }
@@ -100,7 +105,7 @@ export function VideoDeviceDropDown({cameraDevices, initialCamera, disabled, all
     }, [cameraDevices, cameraMap, initialCamera, allowCameraNone, requestCameraChange, selectedCamera])
 
     return (
-        <FormControl size="small" sx={{flexGrow: 1, minWidth: '175px', width: '100%'}}>
+        <FormControl size="small" sx={{flexGrow: 1, minWidth: 0, width: '100%'}}>
             <InputLabel id={labelId} shrink>Camera</InputLabel>
             <Select
                 label="Camera"

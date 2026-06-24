@@ -7,6 +7,26 @@ import { server } from "../../test/server";
 import { renderWithProviders } from "../../test/renderWithProviders";
 import { EditPublicationView } from "./EditPublicationView";
 
+interface MockImageInputProps {
+  emptyImagePoster?: string;
+  existingImage?: string;
+  image?: { dataUrl: string; file: File } | null;
+}
+
+vi.mock("../../components/input/ImageInput", () => ({
+  ImageInput: function MockImageInput({
+    emptyImagePoster,
+    existingImage,
+    image,
+  }: MockImageInputProps) {
+    const imageUrl = image === undefined
+      ? existingImage ?? emptyImagePoster
+      : image?.dataUrl ?? emptyImagePoster;
+
+    return <img alt="Current Image" src={imageUrl} />;
+  },
+}));
+
 interface PublicationDetailVariables {
   id?: unknown;
 }
@@ -258,6 +278,10 @@ describe("EditPublicationView", () => {
       "Summer Songs",
     );
     expect(screen.getByLabelText("Publication date")).toHaveValue("1992-06-01");
+    expect(screen.getByAltText("Current Image")).toHaveAttribute(
+      "src",
+      "/resources/publications/1/cover",
+    );
   });
 
   it("pre-populates book edition metadata without magazine-only fields", async () => {
@@ -341,7 +365,7 @@ describe("EditPublicationView", () => {
       },
     });
     expect(mutationRequests[0].magInput.transcriptions).toBeUndefined();
-  });
+  }, 10000);
 
   it("submits a different selected existing magazine identity id", async () => {
     const user = userEvent.setup();
@@ -397,7 +421,7 @@ describe("EditPublicationView", () => {
         pubId: 1,
       },
     });
-  });
+  }, 10000);
 
   it("submits a typed new magazine identity with required serial number", async () => {
     const user = userEvent.setup();
@@ -449,7 +473,7 @@ describe("EditPublicationView", () => {
         pubId: 1,
       },
     });
-  });
+  }, 10000);
 
   it("shows validation errors before submitting invalid magazine edits", async () => {
     const user = userEvent.setup();

@@ -6,6 +6,7 @@ import { useMediaDeviceInfos } from "./useMediaDeviceInfos";
 
 vi.mock("./support/VideoDevices", () => ({
   VideoDevices: {
+    getCachedDevices: vi.fn(),
     getDevices: vi.fn(),
     refreshDevices: vi.fn(),
     subscribe: vi.fn(),
@@ -24,6 +25,7 @@ function createDevice(deviceId: string) {
 }
 
 describe("useMediaDeviceInfos", () => {
+  const getCachedDevices = vi.mocked(VideoDevices.getCachedDevices);
   const getDevices = vi.mocked(VideoDevices.getDevices);
   const subscribe = vi.mocked(VideoDevices.subscribe);
   let deviceChangeListener: (() => void) | undefined;
@@ -32,6 +34,7 @@ describe("useMediaDeviceInfos", () => {
   beforeEach(() => {
     unsubscribe = vi.fn<() => void>();
     deviceChangeListener = undefined;
+    getCachedDevices.mockReset().mockReturnValue(null);
     getDevices.mockReset();
     subscribe.mockReset();
     subscribe.mockImplementation((listener) => {
@@ -54,6 +57,19 @@ describe("useMediaDeviceInfos", () => {
     await waitFor(() => { expect(result.current.status).toBe("complete"); });
     expect(result.current.cameraDevices).toEqual([device]);
     expect(result.current.message).toBe("Found 1 camera(s)");
+  });
+
+  it("starts complete from cached cameras while confirming the device list", async () => {
+    const device = createDevice("one");
+    getCachedDevices.mockReturnValue([device]);
+    getDevices.mockResolvedValue([device]);
+
+    const { result } = renderHook(() => useMediaDeviceInfos());
+
+    expect(result.current.status).toBe("complete");
+    expect(result.current.cameraDevices).toEqual([device]);
+    expect(result.current.message).toBe("Found 1 camera(s)");
+    await waitFor(() => { expect(getDevices).toHaveBeenCalledOnce(); });
   });
 
   it("treats an empty device list as a completed request", async () => {

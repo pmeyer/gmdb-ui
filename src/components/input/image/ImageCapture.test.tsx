@@ -77,6 +77,7 @@ vi.mock("@mui/material/MenuItem", () => ({
 vi.mock("../util/MiniControlDrawer", () => ({
     MiniControlDrawer: function MockMiniControlDrawer(props: {
         children?: ReactNode;
+        keepMounted?: boolean;
         onToggle: (reason: "button") => void;
         open: boolean;
         toggleLabel: string;
@@ -87,7 +88,7 @@ vi.mock("../util/MiniControlDrawer", () => ({
                 <button onClick={() => { props.onToggle("button"); }} type="button">
                     {props.toggleLabel}
                 </button>
-                {props.open ? props.children : null}
+                {props.open || props.keepMounted ? props.children : null}
             </section>
         );
     },
@@ -164,6 +165,23 @@ function getVideoElement(): HTMLVideoElement {
     return video;
 }
 
+function getMiniControlDrawerProps() {
+    const calls = mocks.miniControlDrawer.mock.calls;
+    const lastCall = calls.at(-1);
+    if (lastCall === undefined) {
+        throw new Error("Expected the mini control drawer to be rendered");
+    }
+    return lastCall[0] as {open: boolean};
+}
+
+function setCameraDevices(cameraDevices: MediaDeviceInfo[]) {
+    mocks.useMediaDeviceInfos.mockReturnValue({
+        cameraDevices,
+        message: `Found ${cameraDevices.length.toString()} camera(s)`,
+        status: "complete",
+    } satisfies UseMediaDeviceInfosReturn);
+}
+
 describe("ImageCapture", () => {
     const camera = createDevice("one");
     const mediaStream = {id: "stream-one"} as unknown as MediaStream;
@@ -214,19 +232,55 @@ describe("ImageCapture", () => {
         vi.restoreAllMocks();
     });
 
-    async function openSettingsAndSelectCamera() {
-        fireEvent.click(screen.getByRole("button", {name: "Image Capture Settings"}));
+    async function selectCamera(device = camera, selectionKind: "initial" | "user" | "system" = "initial") {
+        await waitFor(() => {
+            expect(mocks.videoDeviceDropDown).toHaveBeenCalled();
+        });
         const onCameraChange = getVideoDeviceProps().onCameraChange;
         if (onCameraChange === undefined) {
             throw new Error("Expected a camera change handler");
         }
         await act(async () => {
-            await onCameraChange(camera, "initial");
+            await onCameraChange(device, selectionKind);
         });
     }
 
+    async function openSettings() {
+        await waitFor(() => {
+            expect(mocks.miniControlDrawer).toHaveBeenCalled();
+        });
+
+        if (!getMiniControlDrawerProps().open) {
+            fireEvent.click(screen.getByRole("button", {name: "Image Capture Settings"}));
+        }
+    }
+
     it("initializes a selected camera with the configured aspect ratio", async () => {
+        const onCameraSelected = vi.fn();
         const {container} = render(
+            <ImageCapture
+                initialCamera="one"
+                initialAspectRatio="US_LETTER"
+                onCameraSelected={onCameraSelected}
+                onCapture={vi.fn()}
+                width={640}
+            />,
+        );
+
+        await waitFor(() => {
+            expect(getVideoDeviceProps().initialCamera).toBe("one");
+        });
+        await selectCamera();
+
+        expect(mocks.forDevice).toHaveBeenCalledWith(camera);
+        expect(setMaxWidth).toHaveBeenCalledWith(AspectRatios.US_LETTER);
+        expect(primePhoto).toHaveBeenCalledOnce();
+        expect(onCameraSelected).toHaveBeenCalledWith("one");
+        expect(container.querySelector("video")?.srcObject).toBe(mediaStream);
+    });
+
+    it("auto-selects a single camera without opening the settings tray", async () => {
+        render(
             <ImageCapture
                 initialAspectRatio="US_LETTER"
                 onCapture={vi.fn()}
@@ -234,27 +288,62 @@ describe("ImageCapture", () => {
             />,
         );
 
-        expect(mocks.videoDeviceDropDown).not.toHaveBeenCalled();
-        await openSettingsAndSelectCamera();
+        await selectCamera();
 
-        expect(mocks.forDevice).toHaveBeenCalledWith(camera);
-        expect(setMaxWidth).toHaveBeenCalledWith(AspectRatios.US_LETTER);
-        expect(primePhoto).toHaveBeenCalledOnce();
-        expect(container.querySelector("video")?.srcObject).toBe(mediaStream);
+        expect(getMiniControlDrawerProps().open).toBe(false);
+
+        fireEvent.click(screen.getByRole("button", {name: "Image Capture Settings"}));
+        expect(getMiniControlDrawerProps().open).toBe(true);
+    });
+
+    it("opens the settings tray when multiple cameras need a user selection and closes after selection", async () => {
+        const secondCamera = createDevice("two");
+        const onCameraSelected = vi.fn();
+        setCameraDevices([camera, secondCamera]);
+        render(
+            <ImageCapture
+                initialAspectRatio="US_LETTER"
+                onCameraSelected={onCameraSelected}
+                onCapture={vi.fn()}
+                width={640}
+            />,
+        );
+
+        await waitFor(() => {
+            expect(mocks.videoDeviceDropDown).toHaveBeenCalled();
+        });
+        const onCameraChange = getVideoDeviceProps().onCameraChange;
+        if (onCameraChange === undefined) {
+            throw new Error("Expected a camera change handler");
+        }
+
+        await act(async () => {
+            await onCameraChange(null, "initial");
+        });
+        expect(getMiniControlDrawerProps().open).toBe(true);
+
+        await act(async () => {
+            await onCameraChange(secondCamera, "user");
+        });
+        expect(getMiniControlDrawerProps().open).toBe(false);
+        expect(onCameraSelected).toHaveBeenCalledWith("two");
     });
 
     it("commits successful aspect-ratio changes and retains the prior ratio on failure", async () => {
+        const onError = vi.fn();
         render(
             <ImageCapture
                 allowAspectRatioChange
                 initialAspectRatio="US_LETTER"
                 onCapture={vi.fn()}
+                onError={onError}
                 width={640}
             />,
         );
-        await openSettingsAndSelectCamera();
+        await selectCamera();
         fireEvent.play(getVideoElement());
 
+        await openSettings();
         let aspectRatioSelect = screen.getByRole("combobox", {name: "Aspect Ratio"});
         fireEvent.change(aspectRatioSelect, {target: {value: "A4"}});
         await waitFor(() => {
@@ -267,10 +356,7 @@ describe("ImageCapture", () => {
         setMaxWidth.mockRejectedValueOnce(new Error("unsupported"));
         fireEvent.change(aspectRatioSelect, {target: {value: "SQUARE"}});
         await waitFor(() => {
-            expect(console.error).toHaveBeenCalledWith(
-                "[ICC] Failed to change aspect ratio:",
-                expect.any(Error),
-            );
+            expect(onError).toHaveBeenCalledWith(expect.any(Error));
         });
         fireEvent.click(screen.getByRole("button", {name: "Image Capture Settings"}));
         aspectRatioSelect = screen.getByRole("combobox", {name: "Aspect Ratio"});
@@ -294,7 +380,7 @@ describe("ImageCapture", () => {
                 width={640}
             />,
         );
-        await openSettingsAndSelectCamera();
+        await selectCamera();
         fireEvent.play(getVideoElement());
 
         fireEvent.click(screen.getByRole("button", {name: "Capture image"}));
@@ -325,7 +411,7 @@ describe("ImageCapture", () => {
                 width={640}
             />,
         );
-        await openSettingsAndSelectCamera();
+        await selectCamera();
         fireEvent.play(getVideoElement());
         const failedStream = {
             ...stream,
@@ -345,7 +431,7 @@ describe("ImageCapture", () => {
         expect(screen.getByRole("button", {name: "Capture image"})).not.toBeDisabled();
     });
 
-    it("invokes the optional close callback", () => {
+    it("invokes the optional close callback", async () => {
         const onClose = vi.fn();
         render(
             <ImageCapture
@@ -356,6 +442,7 @@ describe("ImageCapture", () => {
             />,
         );
 
+        await selectCamera();
         fireEvent.click(screen.getByRole("button", {name: "Close image capture"}));
         expect(onClose).toHaveBeenCalledOnce();
     });

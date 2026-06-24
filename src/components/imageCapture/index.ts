@@ -11,7 +11,7 @@ export {
   stopVideoStream,
 } from "./support/Utilities";
 export type { CanvasProvider } from "./support/Utilities";
-export { VideoDevices } from "./support/VideoDevices";
+export { isCameraCaptureSupported, VideoDevices } from "./support/VideoDevices";
 export { VideoStream } from "./support/VideoStream";
 export { useMediaDeviceInfos } from "./useMediaDeviceInfos";
 export type { UseMediaDeviceInfosReturn } from "./useMediaDeviceInfos";

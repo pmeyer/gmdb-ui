@@ -122,7 +122,7 @@ describe("VideoDeviceDropDown", () => {
         expect(onCameraChange).toHaveBeenCalledWith(secondCamera, "initial");
     });
 
-    it("initially selects None when it is allowed and no camera is specified", async () => {
+    it("selects the only available camera during initialization even when None is allowed", async () => {
         const camera = createDevice("one");
         const onCameraChange = createChangeHandler();
 
@@ -130,6 +130,26 @@ describe("VideoDeviceDropDown", () => {
             <VideoDeviceDropDown
                 allowCameraNone
                 cameraDevices={[camera]}
+                onCameraChange={onCameraChange}
+            />,
+        );
+
+        await waitFor(() => {
+            expect(onCameraChange).toHaveBeenCalledWith(camera, "initial");
+            expect(screen.getByRole("combobox", {name: "Camera"})).toHaveValue("one");
+        });
+        expect(screen.getByRole("option", {name: "None"})).toBeInTheDocument();
+    });
+
+    it("initially selects None with multiple cameras when no camera is specified", async () => {
+        const firstCamera = createDevice("one");
+        const secondCamera = createDevice("two");
+        const onCameraChange = createChangeHandler();
+
+        render(
+            <VideoDeviceDropDown
+                allowCameraNone
+                cameraDevices={[firstCamera, secondCamera]}
                 onCameraChange={onCameraChange}
             />,
         );
@@ -184,10 +204,7 @@ describe("VideoDeviceDropDown", () => {
         fireEvent.change(select, {target: {value: "two"}});
 
         await waitFor(() => {
-            expect(console.error).toHaveBeenCalledWith(
-                "[VDDD] Camera Selection Failed (user):",
-                expect.any(Error),
-            );
+            expect(onCameraChange).toHaveBeenCalledWith(secondCamera, "user");
         });
         expect(select).toHaveValue("one");
     });
