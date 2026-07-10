@@ -53,12 +53,12 @@ interface ValidationErrors {
   serialNumber?: string;
 }
 
-function publicationKindLabel(kind: PublicationFormKind) {
-  return kind === "MAG" ? "Magazine issue" : "Book edition";
+function identityLabel(kind: PublicationFormKind) {
+  return kind === "MAG" ? "Magazine" : "Book";
 }
 
-function identityLabel(kind: PublicationFormKind) {
-  return kind === "MAG" ? "Magazine identity" : "Book identity";
+function detailsLabel(kind: PublicationFormKind) {
+  return kind === "MAG" ? "Issue" : "Edition";
 }
 
 function serialNumberLabel(kind: PublicationFormKind) {
@@ -460,12 +460,10 @@ export function PublicationForm({
 
           </Stack>
 
-          <Divider />
-
           <Stack spacing={2}>
             <Box>
               <Typography component="h3" variant="h6">
-                {publicationKindLabel(formState.kind)} details
+                {detailsLabel(formState.kind)}
               </Typography>
               <Typography
                 component="p"
@@ -542,17 +540,14 @@ export function PublicationForm({
             </Box>
           </Stack>
 
-          <Divider />
-
           <Stack spacing={1.5}>
             <Typography component="h3" variant="h6">
-              Cover image
+              Cover
             </Typography>
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={2}
-              sx={{ alignItems: { xs: "stretch", sm: "center" } }}
-            >
+            <Typography component="p" variant="body2" sx={{ color: "text.secondary" }}>
+              {coverImageHelpText}
+            </Typography>
+            <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
               <ImageInput
                 aspectRatioName="LARGE_FORMAT"
                 disabled={isSaving}
@@ -563,9 +558,6 @@ export function PublicationForm({
                 onImageChange={handleCoverImageChange}
                 width={{ xs: "100%", sm: 250 }}
               />
-              <Typography component="p" variant="body2" sx={{ color: "text.secondary" }}>
-                {coverImageHelpText}
-              </Typography>
             </Stack>
           </Stack>
 

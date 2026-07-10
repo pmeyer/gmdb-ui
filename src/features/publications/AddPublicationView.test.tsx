@@ -271,6 +271,21 @@ describe("AddPublicationView", () => {
     expect(
       screen.getByRole("heading", { name: "Add publication" }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Magazine" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Issue" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Cover" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Magazine identity" }))
+      .not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Magazine issue details" }))
+      .not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Cover image" }))
+      .not.toBeInTheDocument();
+    expect(screen.getAllByRole("separator")).toHaveLength(2);
+    expect(
+      screen.getByText("Optional cover image.").compareDocumentPosition(
+        getCoverImageInput(),
+      ) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(screen.getByRole("button", { name: "Magazine issue" })).toHaveAttribute(
       "aria-pressed",
       "true",
@@ -300,6 +315,12 @@ describe("AddPublicationView", () => {
 
     await user.click(screen.getByRole("button", { name: "Book edition" }));
 
+    expect(screen.getByRole("heading", { name: "Book" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Edition" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Book identity" }))
+      .not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Book edition details" }))
+      .not.toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Publication" })).toBeInTheDocument();
     expect(
       screen.getByRole("textbox", { name: "Serial number (ISBN)" }),
