@@ -460,106 +460,118 @@ export function PublicationForm({
 
           </Stack>
 
-          <Stack spacing={2}>
-            <Box>
-              <Typography component="h3" variant="h6">
-                {detailsLabel(formState.kind)}
-              </Typography>
-              <Typography
-                component="p"
-                variant="body2"
-                sx={{ color: "text.secondary", mt: 0.5 }}
-              >
-                {isMagazine
-                  ? "Capture the issue-specific details printed on the cover or masthead."
-                  : "Capture the edition-specific details printed on the title or copyright page."}
-              </Typography>
-            </Box>
+          <Box
+            sx={{
+              display: "grid",
+              gap: { xs: 3, lg: 4 },
+              gridTemplateColumns: {
+                xs: "1fr",
+                lg: "minmax(280px, 420px) minmax(320px, 420px)",
+              },
+              alignItems: "start",
+            }}
+          >
+            <Stack spacing={2}>
+              <Box>
+                <Typography component="h3" variant="h6">
+                  {detailsLabel(formState.kind)}
+                </Typography>
+                <Typography
+                  component="p"
+                  variant="body2"
+                  sx={{ color: "text.secondary", mt: 0.5 }}
+                >
+                  {isMagazine
+                    ? "Capture the issue-specific details printed on the cover or masthead."
+                    : "Capture the edition-specific details printed on the title or copyright page."}
+                </Typography>
+              </Box>
 
-            <Box
-              sx={{
-                display: "grid",
-                gap: 2,
-                gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
-              }}
-            >
-              {isMagazine ? (
-                <>
+              <Box
+                sx={{
+                  display: "grid",
+                  gap: 2,
+                  gridTemplateColumns: "1fr",
+                }}
+              >
+                {isMagazine ? (
+                  <>
+                    <PubInstanceInput
+                      allowAddNew
+                      errorText={validationErrors.issueName}
+                      onChange={handlePubInstanceChange}
+                      pubIndexId={formState.existingPublication?.identity.id}
+                      pubType={formState.kind}
+                      value={formState.publicationInstance}
+                    />
+                    <TextField
+                      helperText="Optional issue volume, typically a number."
+                      label="Volume"
+                      name="volume"
+                      onChange={handleTextFieldChange}
+                      value={formState.volume}
+                    />
+                    <TextField
+                      helperText="Optional issue number as printed."
+                      label="Issue"
+                      name="issue"
+                      onChange={handleTextFieldChange}
+                      value={formState.issue}
+                    />
+                  </>
+                ) : (
                   <PubInstanceInput
                     allowAddNew
-                    errorText={validationErrors.issueName}
+                    errorText={validationErrors.edition}
                     onChange={handlePubInstanceChange}
                     pubIndexId={formState.existingPublication?.identity.id}
                     pubType={formState.kind}
                     value={formState.publicationInstance}
                   />
-                  <TextField
-                    helperText="Optional issue volume, typically a number."
-                    label="Volume"
-                    name="volume"
-                    onChange={handleTextFieldChange}
-                    value={formState.volume}
-                  />
-                  <TextField
-                    helperText="Optional issue number as printed."
-                    label="Issue"
-                    name="issue"
-                    onChange={handleTextFieldChange}
-                    value={formState.issue}
-                  />
-                </>
-              ) : (
-                <PubInstanceInput
-                  allowAddNew
-                  errorText={validationErrors.edition}
-                  onChange={handlePubInstanceChange}
-                  pubIndexId={formState.existingPublication?.identity.id}
-                  pubType={formState.kind}
-                  value={formState.publicationInstance}
+                )}
+
+                <DatePicker
+                  disableFuture
+                  format="MMM YYYY"
+                  label="Publication date"
+                  onChange={handlePublicationDateChange}
+                  reduceAnimations
+                  slotProps={{
+                    field: {
+                      clearable: true,
+                    },
+                    textField: {
+                      helperText: "Optional publication date for this issue or edition.",
+                      name: "publicationDate",
+                    },
+                  }}
+                  value={publicationDateValue}
+                  views={["year", "month"]}
                 />
-              )}
-
-              <DatePicker
-                disableFuture
-                format="MMM YYYY"
-                label="Publication date"
-                onChange={handlePublicationDateChange}
-                reduceAnimations
-                slotProps={{
-                  field: {
-                    clearable: true,
-                  },
-                  textField: {
-                    helperText: "Optional publication date for this issue or edition.",
-                    name: "publicationDate",
-                  },
-                }}
-                value={publicationDateValue}
-                views={["year", "month"]}
-              />
-            </Box>
-          </Stack>
-
-          <Stack spacing={1.5}>
-            <Typography component="h3" variant="h6">
-              Cover
-            </Typography>
-            <Typography component="p" variant="body2" sx={{ color: "text.secondary" }}>
-              {coverImageHelpText}
-            </Typography>
-            <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
-              <ImageInput
-                aspectRatioName="LARGE_FORMAT"
-                disabled={isSaving}
-                emptyImagePoster={coverImagePlaceholderUrl}
-                existingImage={formState.existingCoverImageUrl}
-                fileBaseName="publication-cover"
-                image={formState.coverImage}
-                onImageChange={handleCoverImageChange}
-                width={{ xs: "100%", sm: 250 }}
-              />
+              </Box>
             </Stack>
-          </Stack>
+
+            <Stack spacing={1.5}>
+              <Typography component="h3" variant="h6">
+                Cover
+              </Typography>
+              <Typography component="p" variant="body2" sx={{ color: "text.secondary" }}>
+                {coverImageHelpText}
+              </Typography>
+              <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+                <ImageInput
+                  aspectRatioName="LARGE_FORMAT"
+                  disabled={isSaving}
+                  emptyImagePoster={coverImagePlaceholderUrl}
+                  existingImage={formState.existingCoverImageUrl}
+                  fileBaseName="publication-cover"
+                  image={formState.coverImage}
+                  onImageChange={handleCoverImageChange}
+                  width={{ xs: "100%", lg: "100%" }}
+                />
+              </Stack>
+            </Stack>
+          </Box>
 
           {mutationError !== undefined && (
             <Alert severity="error" variant="outlined">
