@@ -273,6 +273,22 @@ describe("EditPublicationView", () => {
     expect(
       await screen.findByRole("heading", { name: "Edit publication" }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Magazine" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Issue" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Cover" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Magazine identity" }))
+      .not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Magazine issue details" }))
+      .not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Cover image" }))
+      .not.toBeInTheDocument();
+    expect(screen.getAllByRole("separator")).toHaveLength(2);
+    expect(
+      screen.getByText(
+        "Current catalog cover is retained unless a replacement image is selected.",
+      ).compareDocumentPosition(screen.getByAltText("Current Image")) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(screen.getByRole("button", { name: "Magazine issue" })).toHaveAttribute(
       "aria-pressed",
       "true",
@@ -313,6 +329,15 @@ describe("EditPublicationView", () => {
     expect(
       await screen.findByRole("combobox", { name: "Publication" }),
     ).toHaveValue("Collected Rock Tabs");
+    expect(screen.getByRole("heading", { name: "Book" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Edition" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Cover" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Book identity" }))
+      .not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Book edition details" }))
+      .not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Cover image" }))
+      .not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Book edition" })).toHaveAttribute(
       "aria-pressed",
       "true",

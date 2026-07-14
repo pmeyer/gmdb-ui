@@ -53,12 +53,12 @@ interface ValidationErrors {
   serialNumber?: string;
 }
 
-function publicationKindLabel(kind: PublicationFormKind) {
-  return kind === "MAG" ? "Magazine issue" : "Book edition";
+function identityLabel(kind: PublicationFormKind) {
+  return kind === "MAG" ? "Magazine" : "Book";
 }
 
-function identityLabel(kind: PublicationFormKind) {
-  return kind === "MAG" ? "Magazine identity" : "Book identity";
+function detailsLabel(kind: PublicationFormKind) {
+  return kind === "MAG" ? "Issue" : "Edition";
 }
 
 function serialNumberLabel(kind: PublicationFormKind) {
@@ -460,114 +460,118 @@ export function PublicationForm({
 
           </Stack>
 
-          <Divider />
+          <Box
+            sx={{
+              display: "grid",
+              gap: { xs: 3, lg: 4 },
+              gridTemplateColumns: {
+                xs: "1fr",
+                lg: "minmax(280px, 420px) minmax(320px, 420px)",
+              },
+              alignItems: "start",
+            }}
+          >
+            <Stack spacing={2}>
+              <Box>
+                <Typography component="h3" variant="h6">
+                  {detailsLabel(formState.kind)}
+                </Typography>
+                <Typography
+                  component="p"
+                  variant="body2"
+                  sx={{ color: "text.secondary", mt: 0.5 }}
+                >
+                  {isMagazine
+                    ? "Capture the issue-specific details printed on the cover or masthead."
+                    : "Capture the edition-specific details printed on the title or copyright page."}
+                </Typography>
+              </Box>
 
-          <Stack spacing={2}>
-            <Box>
-              <Typography component="h3" variant="h6">
-                {publicationKindLabel(formState.kind)} details
-              </Typography>
-              <Typography
-                component="p"
-                variant="body2"
-                sx={{ color: "text.secondary", mt: 0.5 }}
+              <Box
+                sx={{
+                  display: "grid",
+                  gap: 2,
+                  gridTemplateColumns: "1fr",
+                }}
               >
-                {isMagazine
-                  ? "Capture the issue-specific details printed on the cover or masthead."
-                  : "Capture the edition-specific details printed on the title or copyright page."}
-              </Typography>
-            </Box>
-
-            <Box
-              sx={{
-                display: "grid",
-                gap: 2,
-                gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
-              }}
-            >
-              {isMagazine ? (
-                <>
+                {isMagazine ? (
+                  <>
+                    <PubInstanceInput
+                      allowAddNew
+                      errorText={validationErrors.issueName}
+                      onChange={handlePubInstanceChange}
+                      pubIndexId={formState.existingPublication?.identity.id}
+                      pubType={formState.kind}
+                      value={formState.publicationInstance}
+                    />
+                    <TextField
+                      helperText="Optional issue volume, typically a number."
+                      label="Volume"
+                      name="volume"
+                      onChange={handleTextFieldChange}
+                      value={formState.volume}
+                    />
+                    <TextField
+                      helperText="Optional issue number as printed."
+                      label="Issue"
+                      name="issue"
+                      onChange={handleTextFieldChange}
+                      value={formState.issue}
+                    />
+                  </>
+                ) : (
                   <PubInstanceInput
                     allowAddNew
-                    errorText={validationErrors.issueName}
+                    errorText={validationErrors.edition}
                     onChange={handlePubInstanceChange}
                     pubIndexId={formState.existingPublication?.identity.id}
                     pubType={formState.kind}
                     value={formState.publicationInstance}
                   />
-                  <TextField
-                    helperText="Optional issue volume, typically a number."
-                    label="Volume"
-                    name="volume"
-                    onChange={handleTextFieldChange}
-                    value={formState.volume}
-                  />
-                  <TextField
-                    helperText="Optional issue number as printed."
-                    label="Issue"
-                    name="issue"
-                    onChange={handleTextFieldChange}
-                    value={formState.issue}
-                  />
-                </>
-              ) : (
-                <PubInstanceInput
-                  allowAddNew
-                  errorText={validationErrors.edition}
-                  onChange={handlePubInstanceChange}
-                  pubIndexId={formState.existingPublication?.identity.id}
-                  pubType={formState.kind}
-                  value={formState.publicationInstance}
+                )}
+
+                <DatePicker
+                  disableFuture
+                  format="MMM YYYY"
+                  label="Publication date"
+                  onChange={handlePublicationDateChange}
+                  reduceAnimations
+                  slotProps={{
+                    field: {
+                      clearable: true,
+                    },
+                    textField: {
+                      helperText: "Optional publication date for this issue or edition.",
+                      name: "publicationDate",
+                    },
+                  }}
+                  value={publicationDateValue}
+                  views={["year", "month"]}
                 />
-              )}
+              </Box>
+            </Stack>
 
-              <DatePicker
-                disableFuture
-                format="MMM YYYY"
-                label="Publication date"
-                onChange={handlePublicationDateChange}
-                reduceAnimations
-                slotProps={{
-                  field: {
-                    clearable: true,
-                  },
-                  textField: {
-                    helperText: "Optional publication date for this issue or edition.",
-                    name: "publicationDate",
-                  },
-                }}
-                value={publicationDateValue}
-                views={["year", "month"]}
-              />
-            </Box>
-          </Stack>
-
-          <Divider />
-
-          <Stack spacing={1.5}>
-            <Typography component="h3" variant="h6">
-              Cover image
-            </Typography>
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={2}
-              sx={{ alignItems: { xs: "stretch", sm: "center" } }}
-            >
-              <ImageInput
-                aspectRatioName="LARGE_FORMAT"
-                disabled={isSaving}
-                emptyImagePoster={coverImagePlaceholderUrl}
-                existingImage={formState.existingCoverImageUrl}
-                fileBaseName="publication-cover"
-                image={formState.coverImage}
-                onImageChange={handleCoverImageChange}
-                width={{ xs: "100%", sm: 250 }}
-              />
+            <Stack spacing={1.5}>
+              <Typography component="h3" variant="h6">
+                Cover
+              </Typography>
               <Typography component="p" variant="body2" sx={{ color: "text.secondary" }}>
                 {coverImageHelpText}
               </Typography>
+              <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+                <ImageInput
+                  aspectRatioName="LARGE_FORMAT"
+                  disabled={isSaving}
+                  emptyImagePoster={coverImagePlaceholderUrl}
+                  existingImage={formState.existingCoverImageUrl}
+                  fileBaseName="publication-cover"
+                  image={formState.coverImage}
+                  onImageChange={handleCoverImageChange}
+                  width={{ xs: "100%", lg: "100%" }}
+                />
+              </Stack>
             </Stack>
-          </Stack>
+          </Box>
 
           {mutationError !== undefined && (
             <Alert severity="error" variant="outlined">
