@@ -1,6 +1,6 @@
 {
   "name": "@pmeyer/gmdb-ui",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "description": "Guitar transcription catalog UI",
   "license": "MIT",
