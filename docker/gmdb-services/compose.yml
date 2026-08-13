@@ -61,8 +61,8 @@ services:
     restart: "no"
 
   api:
-    image: ghcr.io/pmeyer/gmdb-api:${GMDB_API_VERSION:-3.0.1}
-    container_name: gmdb-api-${GMDB_API_VERSION:-3.0.1}
+    image: ghcr.io/pmeyer/gmdb-api:${GMDB_API_VERSION:-3.0.2}
+    container_name: gmdb-api-${GMDB_API_VERSION:-3.0.2}
     depends_on:
       liquibase-migrate:
         condition: service_completed_successfully
